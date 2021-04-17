@@ -154,17 +154,6 @@ public class ServerProxy {
 
     public Object run(String methodName, Object... args) {
         try {
-            Method m = cachedMethods.get(methodName);
-            if (m == null) {
-                m = Arrays
-                        .stream(methods)
-                        .filter(me -> me.getName()
-                        .equals(methodName))
-                        .findAny().get();
-                cachedMethods.put(methodName, m);
-
-            }
-
             V8ValueArray arr = (V8ValueArray) args[0];
             List<Object> lst = new ArrayList<>();
 
@@ -176,11 +165,23 @@ public class ServerProxy {
                 } else if (v instanceof V8ValueInteger) {
                     lst.add(((V8ValueInteger) v).toPrimitive());
                 } else if (v instanceof V8ValueDouble) {
-                    lst.add(((V8ValueDouble) v).toPrimitive());
+                    lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive()+""));
                 } else if (v instanceof V8ValueLong) {
                     lst.add(((V8ValueLong) v).toPrimitive());
                 }
             });
+
+            Method m = cachedMethods.get(methodName);
+            if (m == null) {
+                m = Arrays
+                        .stream(methods)
+                        .filter(me -> me.getName().equals(methodName))
+                        .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
+                        .findAny().get();
+                cachedMethods.put(methodName, m);
+
+            }
+
             Object o = null;
             if (!methodName.equals("sendGameMessage")) {
                 o = m.invoke(ServerEventHandler.server, lst.toArray());

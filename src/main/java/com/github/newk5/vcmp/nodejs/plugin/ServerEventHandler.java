@@ -948,9 +948,9 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                String playerObj2 = playerJs.replaceFirst("'#id'", killer.getId() + "");
+                String playerObj2 = playerJs.replaceFirst("'#id'", killer == null ? "-1" : killer.getId() + "");
 
-                v8.getExecutor("onPlayerDeath(" + playerObj + ", " + playerObj2 + "," + reason + ", " + bodyPart + " ); ").execute();
+                v8.getExecutor("onPlayerDeath(" + playerObj + ", " + (killer == null ? "null" : playerObj2) + "," + reason + ", " + bodyPart + " ); ").execute();
                 v8.await();
             } catch (Exception e) {
                 this.exception(e);
