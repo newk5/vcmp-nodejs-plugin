@@ -50,6 +50,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
+    private static String version = "v0.0.5";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private PlayerUpdateEvents playerUpdateEvents;
@@ -107,7 +108,7 @@ public class ServerEventHandler extends RootEventHandler {
             init();
 
             System.out.println("");
-            v8.getExecutor(" console.log('\\x1b[32m', 'Loaded plugin: Node.js v0.0.1 by NewK ');").executeVoid();
+            v8.getExecutor(" console.log('\\x1b[32m', 'Loaded plugin: Node.js " + version + " by NewK ');").executeVoid();
             v8.getExecutor(" console.log('\\x1b[32m','Node.js v14.16.0');").executeVoid();
             v8.getExecutor(" console.log('\\x1b[0m', '');").executeVoid();
             System.out.println("");

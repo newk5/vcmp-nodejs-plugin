@@ -57,6 +57,7 @@ public class ServerProxy {
 
         Context.v8.getExecutor(""
                 + "server.print = function() {    var result = [];     for (var id in this) {   try {  if (typeof(this[id]) == \"function\") {  result.push(id + \": \" + this[id].toString().split(\")\")[0]+\")\" );  }  } catch (err) { result.push(id + \": inaccessible\");   }    }  console.log(result);  }\n"
+                + "server.sendClientMessage = function (  recipient,  colourHex,  message ){  __ServerProxy.run('sendClientMessage', [recipient.id, colourHex, message]);  };\n"
                 + "server.getObject = function ( arg0 ){ if (__ServerProxy.objectExists(arg0)) { return  " + gameObj + ";  } return null;   };\n"
                 + "server.sendGameMessage = function ( arg0, arg1, arg2 ){ __ServerProxy.run('sendGameMessage', [arg0.id, arg1, arg2]); };\n"
                 + "server.createExplosion = function ( arg0, arg1, arg2, arg3, arg4, arg5, arg6 ){  __ServerProxy.createExplosion('createExplosion', arg0, arg1, arg2, arg3, arg4, arg5==null ? null : arg5.id, arg6); };"
@@ -165,7 +166,7 @@ public class ServerProxy {
                 } else if (v instanceof V8ValueInteger) {
                     lst.add(((V8ValueInteger) v).toPrimitive());
                 } else if (v instanceof V8ValueDouble) {
-                    lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive()+""));
+                    lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive() + ""));
                 } else if (v instanceof V8ValueLong) {
                     lst.add(((V8ValueLong) v).toPrimitive());
                 }
@@ -183,12 +184,13 @@ public class ServerProxy {
             }
 
             Object o = null;
-            if (!methodName.equals("sendGameMessage")) {
+            if (!methodName.equals("sendGameMessage") && !methodName.equals("sendClientMessage")) {
                 o = m.invoke(ServerEventHandler.server, lst.toArray());
+                if (o == null) {
+                    return null;
+                }
             }
-            if (o == null) {
-                return null;
-            }
+
             if (methodName.equals("shutdownServer")) {
                 System.exit(0);
             } else if (methodName.equals("createCheckPoint")) {
@@ -261,6 +263,12 @@ public class ServerProxy {
                 String message = (String) lst.get(2);
 
                 ServerEventHandler.server.sendGameMessage(target, type, message);
+            } else if (methodName.equals("sendClientMessage")) {
+                Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
+                int colour = (int) lst.get(1);
+                String message = (String) lst.get(2);
+
+                ServerEventHandler.server.sendClientMessage(target, colour, message);
             }
 
             return o;
