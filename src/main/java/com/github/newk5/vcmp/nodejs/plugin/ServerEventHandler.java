@@ -50,7 +50,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.5";
+    private static String version = "v0.0.6";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private PlayerUpdateEvents playerUpdateEvents;
@@ -510,7 +510,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String chObj = checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "");
-                v8.getExecutor("onCheckPointExited(" + playerObj + ", '" + chObj + "'); ").execute();
+                v8.getExecutor("onCheckPointExited(" + playerObj + ", " + chObj + "); ").execute();
                 v8.await();
 
             } catch (Exception e) {
@@ -527,7 +527,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String chObj = checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "");
-                v8.getExecutor("onCheckPointEntered(" + playerObj + ", '" + chObj + "'); ").execute();
+                v8.getExecutor("onCheckPointEntered(" + playerObj + ",  "+ chObj + "); ").execute();
                 v8.await();
 
             } catch (Exception e) {

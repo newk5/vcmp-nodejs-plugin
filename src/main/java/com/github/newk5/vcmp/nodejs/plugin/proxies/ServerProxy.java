@@ -5,6 +5,7 @@ import com.caoccao.javet.values.primitive.V8ValueBoolean;
 import com.caoccao.javet.values.primitive.V8ValueDouble;
 import com.caoccao.javet.values.primitive.V8ValueInteger;
 import com.caoccao.javet.values.primitive.V8ValueLong;
+import com.caoccao.javet.values.primitive.V8ValueNull;
 import com.caoccao.javet.values.primitive.V8ValueString;
 import com.caoccao.javet.values.reference.V8ValueArray;
 import com.caoccao.javet.values.reference.V8ValueObject;
@@ -73,7 +74,7 @@ public class ServerProxy {
                 + "server.getPickup = function ( arg0 ){ if (__ServerProxy.pickupExists(arg0)) { return  " + pobj + ";  } return null;   };\n"
                 + "server.createPickup = function ( arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 ){ const id = __ServerProxy.run('createPickup', arguments); return  " + pobjId + ";   };\n"
                 + "server.getCheckPoint = function ( arg0 ){ if (__ServerProxy.checkPointExists(arg0)) { return  " + chObj + ";  } return null;   };\n"
-                + "server.createCheckPoint = function ( arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 ){  const id =  __ServerProxy.run('createCheckPoint', arguments);  return  " + chObjId + ";  };")
+                + "server.createCheckPoint = function ( arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 ){  const id =  __ServerProxy.run('createCheckPoint', [arg0== null ? null: arg0.id, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10] );  return  " + chObjId + ";  };")
                 .executeVoid();
     }
 
@@ -160,7 +161,9 @@ public class ServerProxy {
             List<Object> lst = new ArrayList<>();
 
             arr.forEach((k, v) -> {
-                if (v instanceof V8ValueString) {
+                if (v instanceof V8ValueNull) {
+                    lst.add(null);
+                } else if (v instanceof V8ValueString) {
                     lst.add(((V8ValueString) v).toPrimitive());
                 } else if (v instanceof V8ValueBoolean) {
                     lst.add(((V8ValueBoolean) v).toPrimitive());
@@ -186,6 +189,10 @@ public class ServerProxy {
 
             Object o = null;
             if (!methodName.equals("sendGameMessage") && !methodName.equals("sendClientMessage")) {
+                if (methodName.equals("createCheckPoint") && lst.get(0) != null) {
+                    int id = (int) lst.get(0);
+                    lst.set(0, ServerEventHandler.server.getPlayer(id));
+                }
                 o = m.invoke(ServerEventHandler.server, lst.toArray());
                 if (o == null) {
                     return null;

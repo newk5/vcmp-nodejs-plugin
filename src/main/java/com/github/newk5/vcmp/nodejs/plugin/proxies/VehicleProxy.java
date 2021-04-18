@@ -4,6 +4,7 @@ import com.caoccao.javet.values.primitive.V8ValueBoolean;
 import com.caoccao.javet.values.primitive.V8ValueDouble;
 import com.caoccao.javet.values.primitive.V8ValueInteger;
 import com.caoccao.javet.values.primitive.V8ValueLong;
+import com.caoccao.javet.values.primitive.V8ValueNull;
 import com.caoccao.javet.values.primitive.V8ValueString;
 import com.caoccao.javet.values.reference.V8ValueArray;
 import com.caoccao.javet.values.reference.V8ValueObject;
@@ -46,14 +47,16 @@ public class VehicleProxy {
             List<Object> lst = new ArrayList<>();
 
             arr.forEach((k, v) -> {
-                if (v instanceof V8ValueString) {
+                if (v instanceof V8ValueNull) {
+                    lst.add(null);
+                } else if (v instanceof V8ValueString) {
                     lst.add(((V8ValueString) v).toPrimitive());
                 } else if (v instanceof V8ValueBoolean) {
                     lst.add(((V8ValueBoolean) v).toPrimitive());
                 } else if (v instanceof V8ValueInteger) {
                     lst.add(((V8ValueInteger) v).toPrimitive());
                 } else if (v instanceof V8ValueDouble) {
-                    lst.add(((V8ValueDouble) v).toPrimitive());
+                    lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive() + ""));
                 } else if (v instanceof V8ValueLong) {
                     lst.add(((V8ValueLong) v).toPrimitive());
                 }
