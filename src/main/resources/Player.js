@@ -1,5 +1,8 @@
 var a = {
     id : '#id',
+    addImmunity: function(intValue) { __PlayerProxy.addImmunity(this.id,intValue); },
+    removeImmunity: function(intValue) { __PlayerProxy.removeImmunity(this.id,intValue); },
+    hasImmunity: function(intValue) { return __PlayerProxy.hasImmunity(this.id,intValue); },
     sendStream : function (stream) { stream.build();  __PlayerProxy.sendStream(this.id,stream.bb.raw); },
     getName : function ( ){ return  __PlayerProxy.run(this.id, 'getName', arguments); },
     setName : function ( arg0 ){ return  __PlayerProxy.run(this.id, 'setName', arguments); },

@@ -56,7 +56,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.7";
+    private static String version = "v0.0.8";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean started = new AtomicBoolean(false);
@@ -134,6 +134,7 @@ public class ServerEventHandler extends RootEventHandler {
             this.objectJs = utils.readResource("Object.js");
             this.pickupJs = utils.readResource("Pickup.js");
             this.vehicleJs = utils.readResource("Vehicle.js");
+            v8.getExecutor(utils.readResource("VCMPGlobals.js")).executeVoid();
             init();
 
             System.out.println("");

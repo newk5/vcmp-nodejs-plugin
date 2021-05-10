@@ -17,6 +17,7 @@ import com.maxorator.vcmp.java.plugin.integration.generic.Vector;
 import com.maxorator.vcmp.java.plugin.integration.player.Player;
 import com.maxorator.vcmp.java.plugin.integration.vehicle.Vehicle;
 import com.maxorator.vcmp.java.plugin.integration.vehicle.VehicleColours;
+import com.maxorator.vcmp.java.plugin.integration.vehicle.VehicleDamage;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -131,6 +132,60 @@ public class VehicleProxy {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    public int getTyreStatus(int id, int tyre) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            return vd.getTyreStatus(tyre);
+        }
+        return -1;
+    }
+
+    public int getDoorStatus(int id, int tyre) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            return vd.getDoorStatus(tyre).ordinal();
+        }
+        return -1;
+    }
+
+    public void setDoorStatus(int id,int door, int status) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            vd.setDoorStatus(door, status);
+            v.setDamage(vd.damage);
+        }
+    }
+
+    public void setTyreStatus(int id, int trye, int status) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            vd.setTyreStatus(trye, status);
+            v.setDamage(vd.damage);
+        }
+    }
+
+    public int getPanelStatus(int id, int panel) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            return vd.getPanelStatus(panel);
+        }
+        return -1;
+    }
+
+    public void setPanelStatus(int id,int panel, int status) {
+        Vehicle v = ServerEventHandler.server.getVehicle(id);
+        if (v != null) {
+            VehicleDamage vd = v.getDamage();
+            vd.setPanelStatus(panel, status);
+            v.setDamage(vd.damage);
+        }
     }
 
 }

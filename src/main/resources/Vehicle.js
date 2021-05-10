@@ -1,5 +1,11 @@
 var a = {
     id : '#id',
+    getTyreStatus : function(tyre) {  return __VehicleProxy.getTyreStatus(this.id, tyre);  },
+    getDoorStatus : function(door) {  return __VehicleProxy.getDoorStatus(this.id, door);  },
+    getPanelStatus : function(panel) {  return __VehicleProxy.getPanelStatus(this.id, panel);  },
+    setDoorStatus : function(door,status) {  __VehicleProxy.setDoorStatus(this.id, door, status);  },
+    setTyreStatus : function(tyre,status) {  return __VehicleProxy.setTyreStatus(this.id, tyre,status);  },
+    setPanelStatus : function(pane,status) {  return __VehicleProxy.setPanelStatus(this.id, panel,status);  },
     delete : function ( ){  __VehicleProxy.run(this.id, 'delete', arguments); },
     setSpawnRotationEuler : function ( arg0, arg1, arg2 ){  __VehicleProxy.run(this.id, 'setSpawnRotationEuler', arguments); },
     isStreamedForPlayer : function ( arg0 ){ return  __PlayerProxy.run(this.id, 'isStreamedForPlayer', [arg0.id]); },

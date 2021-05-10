@@ -18,6 +18,7 @@ import static com.github.newk5.vcmp.nodejs.plugin.ServerEventHandler.vehicleJs;
 import com.maxorator.vcmp.java.plugin.integration.generic.Vector;
 import com.maxorator.vcmp.java.plugin.integration.placeable.GameObject;
 import com.maxorator.vcmp.java.plugin.integration.player.Player;
+import com.maxorator.vcmp.java.plugin.integration.player.PlayerImmunity;
 import com.maxorator.vcmp.java.plugin.integration.player.PlayerImpl;
 import com.maxorator.vcmp.java.plugin.integration.vehicle.Vehicle;
 import java.lang.reflect.Method;
@@ -35,6 +36,40 @@ public class PlayerProxy {
         Player p = ServerEventHandler.server.getPlayer(id);
 
         ServerEventHandler.server.sendScriptData(p, b);
+    }
+
+    public void removeImmunity(int id, int v) {
+        Player p = ServerEventHandler.server.getPlayer(id);
+        if (p == null) {
+            System.out.println("Player.removeImmunity: no player found");
+            return;
+        }
+        PlayerImmunity i = p.getImmunities();
+        i.remove(v);
+        p.setImmunityFlags(i.hex);
+
+    }
+
+    public boolean hasImmunity(int id, int v) {
+        Player p = ServerEventHandler.server.getPlayer(id);
+        if (p == null) {
+            System.out.println("Player.hasImmunity: no player found");
+            return false;
+        }
+        return p.getImmunities().has(v);
+
+    }
+
+    public void addImmunity(int id, int v) {
+        Player p = ServerEventHandler.server.getPlayer(id);
+        if (p == null) {
+            System.out.println("Player.addImmunity: no player found");
+            return;
+        }
+        PlayerImmunity i = p.getImmunities();
+        i.add(v);
+        p.setImmunityFlags(i.hex);
+
     }
 
     public Object run(Integer id, String method, Object... args) {
