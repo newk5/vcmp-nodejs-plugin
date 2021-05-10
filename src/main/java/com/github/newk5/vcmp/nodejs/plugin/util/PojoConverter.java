@@ -2,7 +2,8 @@ package com.github.newk5.vcmp.nodejs.plugin.util;
 
 import com.caoccao.javet.exceptions.JavetException;
 import com.caoccao.javet.interop.V8Runtime;
-import com.caoccao.javet.utils.converters.JavetObjectConverter;
+import com.caoccao.javet.interop.converters.JavetObjectConverter;
+
 import com.caoccao.javet.values.V8Value;
 import com.caoccao.javet.values.reference.V8ValueObject;
 

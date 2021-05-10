@@ -2,8 +2,8 @@ package com.github.newk5.vcmp.nodejs.plugin.util;
 
 import com.caoccao.javet.exceptions.JavetException;
 import com.caoccao.javet.interop.V8Runtime;
+import com.caoccao.javet.interop.converters.JavetObjectConverter;
 import com.caoccao.javet.utils.JavetCallbackContext;
-import com.caoccao.javet.utils.converters.JavetObjectConverter;
 import com.caoccao.javet.values.V8Value;
 
 import com.caoccao.javet.values.reference.V8ValueObject;
@@ -53,7 +53,7 @@ public class EntityConverter extends JavetObjectConverter {
             for (Method method : objectClass.getMethods()) {
 
                 if (!EXCLUDED_METHODS.contains(method.getName())) {
-                    JavetCallbackContext callback = new JavetCallbackContext(object, method, false, this);
+                    JavetCallbackContext callback = new JavetCallbackContext(object, method, false);
 
                     v8ValueObject.setFunction(method.getName(), callback);
                 }
