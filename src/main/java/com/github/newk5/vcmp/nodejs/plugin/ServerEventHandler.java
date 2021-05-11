@@ -56,11 +56,12 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.8";
+    private static String version = "v0.0.9";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean started = new AtomicBoolean(false);
     private PlayerUpdateEvents playerUpdateEvents;
+    private boolean isWin = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
 
     public ServerEventHandler(Server server) throws IOException, InterruptedException, JavetException {
         super(server);
@@ -168,14 +169,12 @@ public class ServerEventHandler extends RootEventHandler {
             v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath());
 
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
-            IV8Executor e = v8.getExecutor(new File("src" + File.separator + "main.js"));
-            //e.setModule(true);
-            //e.getV8ScriptOrigin().setModule(true);
-            e.setResourceName(new File("src" + File.separator + "main.js").getAbsolutePath());
-            e.executeVoid();
+            IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
+           
+            e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
+
             System.out.println(e.getResourceName());
-            //  v8.getExecutor(new File("src" + File.separator + "main.js")).executeVoid();
-            //
+          
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
             V8Value vehicleProxy = entityConverter.toV8Value(v8, new VehicleProxy());
             V8Value pickupProxy = entityConverter.toV8Value(v8, new PickupProxy());
@@ -195,6 +194,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             v8.getGlobalObject().set("server", serverJs);
             sp.overrideObjectGetters();
+            e.executeVoid();
 
             playerProxy.close();
             vehicleProxy.close();
@@ -266,15 +266,13 @@ public class ServerEventHandler extends RootEventHandler {
         try {
 
             if (Context.functionExists("onServerLoadScripts")) {
-                new Thread(() -> {
-                    try {
-                        v8.getGlobalObject().invoke("onServerLoadScripts");
 
-                    } catch (JavetException ex) {
-                        Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                try {
+                    v8.getGlobalObject().invoke("onServerLoadScripts");
 
-                }).start();
+                } catch (JavetException ex) {
+                    Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
                 // 
             }
