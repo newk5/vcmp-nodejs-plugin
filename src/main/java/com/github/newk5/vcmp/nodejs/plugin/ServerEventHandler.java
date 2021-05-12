@@ -60,7 +60,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.10";
+    private static String version = "v0.0.11";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean started = new AtomicBoolean(false);

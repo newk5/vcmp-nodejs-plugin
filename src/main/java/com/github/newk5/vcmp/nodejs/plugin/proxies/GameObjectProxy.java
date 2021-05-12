@@ -93,9 +93,10 @@ public class GameObjectProxy {
                 obj.setProperty("w", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.w));
                 return obj;
             }
-              ServerProxy.closeSyncBlock();
+            ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            System.out.println("exception running " + method);
             ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }

@@ -101,6 +101,7 @@ public class CheckpointProxy {
             ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            System.out.println("exception running " + method);
             ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }

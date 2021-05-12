@@ -229,20 +229,26 @@ public class ServerProxy {
 
             V8ValueArray arr = (V8ValueArray) args[0];
             List<Object> lst = new ArrayList<>();
-
+            List<Class> paramTypes = new ArrayList<>();
             arr.forEach((k, v) -> {
                 if (v instanceof V8ValueNull) {
                     lst.add(null);
+
                 } else if (v instanceof V8ValueString) {
                     lst.add(((V8ValueString) v).toPrimitive());
+                    paramTypes.add(String.class);
                 } else if (v instanceof V8ValueBoolean) {
                     lst.add(((V8ValueBoolean) v).toPrimitive());
+                    paramTypes.add(boolean.class);
                 } else if (v instanceof V8ValueInteger) {
                     lst.add(((V8ValueInteger) v).toPrimitive());
+                    paramTypes.add(int.class);
                 } else if (v instanceof V8ValueDouble) {
                     lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive() + ""));
+                    paramTypes.add(double.class);
                 } else if (v instanceof V8ValueLong) {
                     lst.add(((V8ValueLong) v).toPrimitive());
+                    paramTypes.add(long.class);
                 }
             });
 
@@ -252,6 +258,14 @@ public class ServerProxy {
                         .stream(methods)
                         .filter(me -> me.getName().equals(methodName))
                         .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
+                        .filter(me -> {
+                            boolean b = Arrays.equals(me.getParameterTypes(), paramTypes.toArray());
+                            if (methodName.equals("getOption") || methodName.equals("setOption")) {
+                                return b;
+                            }
+                            return true;
+
+                        })
                         .findAny().get();
                 cachedMethods.put(methodName, m);
 
@@ -365,6 +379,7 @@ public class ServerProxy {
             return o;
         } catch (Exception ex) {
             ex.printStackTrace();
+            System.out.println("exception running " + methodName);
         }
         return null;
     }
