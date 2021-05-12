@@ -60,7 +60,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.9";
+    private static String version = "v0.0.10";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean started = new AtomicBoolean(false);
@@ -70,7 +70,6 @@ public class ServerEventHandler extends RootEventHandler {
     public ServerEventHandler(Server server) throws IOException, InterruptedException, JavetException {
         super(server);
         this.server = server;
-        System.out.println(Thread.currentThread().getName());
         entityConverter = new EntityConverter();
         if (hotReload) {
             new Thread(() -> {
@@ -101,7 +100,6 @@ public class ServerEventHandler extends RootEventHandler {
 
         Thread eventLoop = new Thread(() -> {
             try {
-                System.out.println("worked thread " + Thread.currentThread().getName());
                 started.set(true);
                 while (true) {
 
@@ -152,14 +150,12 @@ public class ServerEventHandler extends RootEventHandler {
             System.out.println("");
             org.pmw.tinylog.Logger.info("Node.js context initilized");
             if (Context.functionExists("onServerInitialise")) {
-                /*
-                try (V8ValuePromise a = v8.getExecutor("var vcmp = require('vcmp');").setModule(true).execute()) {
-                 //  a.e
-                }*/
+              
                 v8.getGlobalObject().invoke("onServerInitialise");
 
             }
         } catch (Exception e) {
+            exception(e);
             e.printStackTrace();
         }
         return true;

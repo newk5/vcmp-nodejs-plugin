@@ -94,3 +94,11 @@ const server ={
     shutdownServer : function( ) { __ServerProxy.run('shutdownServer', arguments); }  
     
 };
+
+process.on('uncaughtException', (err, origin) => {
+    console.log(err.stack);
+    require("fs").writeFileSync(
+        "uncaughtException.txt",
+        `Caught exception: ${err.stack}\n`
+    );
+});
