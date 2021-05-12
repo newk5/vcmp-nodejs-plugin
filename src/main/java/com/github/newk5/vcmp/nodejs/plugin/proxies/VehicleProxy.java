@@ -32,6 +32,7 @@ public class VehicleProxy {
 
     public Object run(Integer id, String method, Object... args) {
         try {
+            ServerProxy.syncThread();
             Vehicle p = ServerEventHandler.server.getVehicle(id);
             Method m = cachedMethods.get(method);
             if (m == null) {
@@ -64,6 +65,7 @@ public class VehicleProxy {
             });
             if (method.equalsIgnoreCase("getTurretRotation")) {
                 Rotation2d ord = (Rotation2d) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 if (ord != null) {
                     V8ValueObject obj = Context.v8.createV8ValueObject();
                     obj.setProperty("horizontal", ServerEventHandler.entityConverter.toV8Value(Context.v8, ord.horizontal));
@@ -75,6 +77,7 @@ public class VehicleProxy {
 
             } else if (method.equalsIgnoreCase("getColours")) {
                 VehicleColours vec = (VehicleColours) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 if (vec != null) {
                     V8ValueObject obj = Context.v8.createV8ValueObject();
                     obj.setProperty("primary", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.primary));
@@ -86,26 +89,36 @@ public class VehicleProxy {
 
             } else if (method.equals("isStreamedForPlayer")) {
                 if (lst.get(0) == null) {
-                    return p.isStreamedForPlayer(null);
+                    boolean b = p.isStreamedForPlayer(null);
+                    ServerProxy.closeSyncBlock();
+                    return b;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
-                return p.isStreamedForPlayer(target);
+                boolean b = p.isStreamedForPlayer(target);
+                ServerProxy.closeSyncBlock();
+                return b;
             } else if (method.equals("getDamage")) {
 
-                return p.getDamageHex();
+                int dmg = p.getDamageHex();
+                ServerProxy.closeSyncBlock();
+                return dmg;
             } else if (method.equals("getSyncController") || method.equals("getOccupant")) {
                 Player target = (Player) m.invoke(p, lst.toArray());
                 if (target == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
 
                 String playerObj = playerJs.replaceFirst("'#id'", target.getId() + "");
+                ServerProxy.closeSyncBlock();
                 return playerObj;
             } else if (method.equals("getSyncReason")) {
                 int ord = (int) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 return ord;
             } else if (method.equals("getPosition") || method.equals("getRotationEuler") || method.equals("getSpeed") || method.equals("getTurnSpeed") || method.equals("getSpawnPosition") || method.equals("getSpawnRotationEuler")) {
                 Vector vec = (Vector) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
                     return null;
@@ -116,6 +129,7 @@ public class VehicleProxy {
                 return obj;
             } else if (method.equals("getRotation") || method.equals("getSpawnRotation")) {
                 Quaternion vec = (Quaternion) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
                     return null;
@@ -126,66 +140,82 @@ public class VehicleProxy {
                 obj.setProperty("w", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.w));
                 return obj;
             }
-
+            ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }
         return null;
     }
 
     public int getTyreStatus(int id, int tyre) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
+            ServerProxy.closeSyncBlock();
             return vd.getTyreStatus(tyre);
         }
+        ServerProxy.closeSyncBlock();
         return -1;
     }
 
     public int getDoorStatus(int id, int tyre) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
+            ServerProxy.closeSyncBlock();
             return vd.getDoorStatus(tyre).ordinal();
         }
+        ServerProxy.closeSyncBlock();
         return -1;
     }
 
-    public void setDoorStatus(int id,int door, int status) {
+    public void setDoorStatus(int id, int door, int status) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
             vd.setDoorStatus(door, status);
             v.setDamage(vd.damage);
         }
+        ServerProxy.closeSyncBlock();
     }
 
     public void setTyreStatus(int id, int trye, int status) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
             vd.setTyreStatus(trye, status);
             v.setDamage(vd.damage);
         }
+        ServerProxy.closeSyncBlock();
     }
 
     public int getPanelStatus(int id, int panel) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
+            ServerProxy.closeSyncBlock();
             return vd.getPanelStatus(panel);
         }
+        ServerProxy.closeSyncBlock();
         return -1;
     }
 
-    public void setPanelStatus(int id,int panel, int status) {
+    public void setPanelStatus(int id, int panel, int status) {
+        ServerProxy.syncThread();
         Vehicle v = ServerEventHandler.server.getVehicle(id);
         if (v != null) {
             VehicleDamage vd = v.getDamage();
             vd.setPanelStatus(panel, status);
             v.setDamage(vd.damage);
         }
+        ServerProxy.closeSyncBlock();
     }
 
 }

@@ -33,12 +33,15 @@ public class PlayerProxy {
     private static Method[] methods = PlayerImpl.class.getMethods();
 
     public void sendStream(Integer id, byte[] b) throws JavetException {
+        ServerProxy.syncThread();
         Player p = ServerEventHandler.server.getPlayer(id);
 
         ServerEventHandler.server.sendScriptData(p, b);
+        ServerProxy.closeSyncBlock();
     }
 
     public void removeImmunity(int id, int v) {
+        ServerProxy.syncThread();
         Player p = ServerEventHandler.server.getPlayer(id);
         if (p == null) {
             System.out.println("Player.removeImmunity: no player found");
@@ -47,20 +50,24 @@ public class PlayerProxy {
         PlayerImmunity i = p.getImmunities();
         i.remove(v);
         p.setImmunityFlags(i.hex);
+        ServerProxy.closeSyncBlock();
 
     }
 
     public boolean hasImmunity(int id, int v) {
+        ServerProxy.syncThread();
         Player p = ServerEventHandler.server.getPlayer(id);
         if (p == null) {
             System.out.println("Player.hasImmunity: no player found");
             return false;
         }
+        ServerProxy.closeSyncBlock();
         return p.getImmunities().has(v);
 
     }
 
     public void addImmunity(int id, int v) {
+        ServerProxy.syncThread();
         Player p = ServerEventHandler.server.getPlayer(id);
         if (p == null) {
             System.out.println("Player.addImmunity: no player found");
@@ -69,11 +76,13 @@ public class PlayerProxy {
         PlayerImmunity i = p.getImmunities();
         i.add(v);
         p.setImmunityFlags(i.hex);
-
+        ServerProxy.closeSyncBlock();
     }
 
     public Object run(Integer id, String method, Object... args) {
         try {
+            ServerProxy.syncThread();
+
             Player p = ServerEventHandler.server.getPlayer(id);
             Method m = cachedMethods.get(method);
             if (m == null) {
@@ -108,29 +117,39 @@ public class PlayerProxy {
             if (method.equalsIgnoreCase("setSpectateTarget")) {
                 if (lst.get(0) == null) {
                     p.setSpectateTarget(null);
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
                 if (target != null) {
                     p.setSpectateTarget(target);
+                    ServerProxy.closeSyncBlock();
                 }
                 return null;
 
             } else if (method.equals("getSpectateTarget")) {
                 Player target = p.getSpectateTarget();
                 if (target == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
 
                 String playerObj = playerJs.replaceFirst("'#id'", target.getId() + "");
+                ServerProxy.closeSyncBlock();
                 return playerObj;
 
             } else if (method.equals("isStreamedForPlayer")) {
+                boolean v = false;
                 if (lst.get(0) == null) {
-                    return p.isStreamedForPlayer(null);
+
+                    v = p.isStreamedForPlayer(null);
+                    ServerProxy.closeSyncBlock();
+                    return v;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
-                return p.isStreamedForPlayer(target);
+                v = p.isStreamedForPlayer(target);
+                ServerProxy.closeSyncBlock();
+                return v;
             } else if (method.equals("putInVehicle")) {
                 int vid = (int) lst.get(0);
                 int slot = (int) lst.get(1);
@@ -138,27 +157,33 @@ public class PlayerProxy {
                 boolean b2 = (boolean) lst.get(3);
 
                 p.putInVehicle(ServerEventHandler.server.getVehicle(vid), slot, b1, b2);
+                ServerProxy.closeSyncBlock();
                 return null;
             } else if (method.equals("getColour")) {
                 V8ValueInteger obj = Context.v8.createV8ValueInteger(p.getColourHex());
+                ServerProxy.closeSyncBlock();
                 return obj;
 
             } else if (method.equals("getVehicle") || method.equals("getStandingOnVehicle")) {
                 Vehicle v = (Vehicle) m.invoke(p, lst.toArray());
                 if (v == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
 
                 String vehicleObjId = vehicleJs.replaceFirst("'#id'", v.getId() + "");
+                ServerProxy.closeSyncBlock();
                 return vehicleObjId;
 
             } else if (method.equals("getStandingOnObject")) {
                 GameObject v = (GameObject) m.invoke(p, lst.toArray());
                 if (v == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
 
                 String gameObj = objectJs.replaceFirst("'#id'", v.getId() + "");
+                ServerProxy.closeSyncBlock();
                 return gameObj;
 
             } else if (method.equals("getPosition") || method.equals("getSpeed") || method.equals("getAimPosition") || method.equals("getAimDirection")) {
@@ -176,12 +201,18 @@ public class PlayerProxy {
                 obj.setProperty("x", ServerEventHandler.entityConverter.toV8Value(v8, vec.x));
                 obj.setProperty("y", ServerEventHandler.entityConverter.toV8Value(v8, vec.y));
                 obj.setProperty("z", ServerEventHandler.entityConverter.toV8Value(v8, vec.z));
+                ServerProxy.closeSyncBlock();
                 return obj;
 
             }
 
-            return m.invoke(p, lst.toArray());
+            Object o = m.invoke(p, lst.toArray());
+
+            ServerProxy.closeSyncBlock();
+            return o;
+
         } catch (Exception ex) {
+            ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }
         return null;

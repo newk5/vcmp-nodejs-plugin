@@ -22,7 +22,7 @@ public class EntityConverter extends JavetObjectConverter {
     static {
         EXCLUDED_METHODS = new HashSet<>();
         EXCLUDED_METHODS.add("equals");
-        EXCLUDED_METHODS.add("sync");
+     //  EXCLUDED_METHODS.add("sync");
         EXCLUDED_METHODS.add("startThreadSynced");
         EXCLUDED_METHODS.add("isUnloaded");
         EXCLUDED_METHODS.add("runSyncBlocks");
@@ -54,7 +54,7 @@ public class EntityConverter extends JavetObjectConverter {
 
                 if (!EXCLUDED_METHODS.contains(method.getName())) {
                     JavetCallbackContext callback = new JavetCallbackContext(object, method, false);
-
+                    
                     v8ValueObject.setFunction(method.getName(), callback);
                 }
 

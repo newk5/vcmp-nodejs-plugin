@@ -29,6 +29,7 @@ import com.maxorator.vcmp.java.plugin.integration.placeable.GameObject;
 import com.maxorator.vcmp.java.plugin.integration.placeable.Pickup;
 import com.maxorator.vcmp.java.plugin.integration.player.Player;
 import com.maxorator.vcmp.java.plugin.integration.server.Server;
+import com.maxorator.vcmp.java.plugin.integration.server.SyncBlock;
 import com.maxorator.vcmp.java.plugin.integration.vehicle.Vehicle;
 
 import java.io.File;
@@ -40,12 +41,15 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerEventHandler extends RootEventHandler {
 
+    public static ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public static EntityConverter entityConverter;
     public static Server server;
     public static String playerJs = "";
@@ -66,7 +70,7 @@ public class ServerEventHandler extends RootEventHandler {
     public ServerEventHandler(Server server) throws IOException, InterruptedException, JavetException {
         super(server);
         this.server = server;
-
+        System.out.println(Thread.currentThread().getName());
         entityConverter = new EntityConverter();
         if (hotReload) {
             new Thread(() -> {
@@ -95,24 +99,26 @@ public class ServerEventHandler extends RootEventHandler {
         }
         v8 = V8Host.getNodeInstance().createV8Runtime();
 
-        new Thread(() -> {
+        Thread eventLoop = new Thread(() -> {
             try {
-
+                System.out.println("worked thread " + Thread.currentThread().getName());
                 started.set(true);
                 while (true) {
+
                     v8.await();
                     try {
                         Thread.sleep(1);
-                    } catch (InterruptedException ex) {
+                    } catch (Exception ex) {
                         Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    //System.out.println(System.currentTimeMillis());
                 }
 
             } catch (Exception ex) {
                 Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }).start();
+        });
+        eventLoop.setName("eventLoopThread");
+        eventLoop.start();
         while (!started.get()) {
 
         }
@@ -136,6 +142,7 @@ public class ServerEventHandler extends RootEventHandler {
             this.pickupJs = utils.readResource("Pickup.js");
             this.vehicleJs = utils.readResource("Vehicle.js");
             v8.getExecutor(utils.readResource("VCMPGlobals.js")).executeVoid();
+            v8.getExecutor(utils.readResource("Server.js")).executeVoid();
             init();
 
             System.out.println("");
@@ -170,11 +177,11 @@ public class ServerEventHandler extends RootEventHandler {
 
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
             IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
-           
+
             e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
 
             System.out.println(e.getResourceName());
-          
+
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
             V8Value vehicleProxy = entityConverter.toV8Value(v8, new VehicleProxy());
             V8Value pickupProxy = entityConverter.toV8Value(v8, new PickupProxy());
@@ -192,7 +199,6 @@ public class ServerEventHandler extends RootEventHandler {
             v8.getGlobalObject().set("__CheckPointProxy", checkpointProxy);
             v8.getGlobalObject().set("__ServerProxy", serverProxy);
 
-            v8.getGlobalObject().set("server", serverJs);
             sp.overrideObjectGetters();
             e.executeVoid();
 
@@ -235,9 +241,10 @@ public class ServerEventHandler extends RootEventHandler {
             org.pmw.tinylog.Logger.error(e);
             if (e instanceof JavetExecutionException) {
                 JavetExecutionException jex = (JavetExecutionException) e;
-                /*String msg = "\033[0;31m ERROR: main.js:" + jex.getError().getLineNumber() + " " + jex.getError().getSourceLine() + " " + jex.getError().getMessage() + "\033[0m";
+
+                String msg = "\033[0;31m ERROR: main.js:" + jex.getScriptingError().getLineNumber() + " " + jex.getScriptingError().getSourceLine() + " " + jex.getScriptingError().getMessage() + "\033[0m";
                 System.out.println(msg);
-                org.pmw.tinylog.Logger.error(msg);*/
+                org.pmw.tinylog.Logger.error(msg);
             }
         } catch (Exception javetException) {
         }

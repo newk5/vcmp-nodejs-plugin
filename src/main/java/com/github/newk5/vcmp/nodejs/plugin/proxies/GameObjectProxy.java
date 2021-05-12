@@ -28,6 +28,7 @@ public class GameObjectProxy {
 
     public Object run(Integer id, String method, Object... args) {
         try {
+            ServerProxy.syncThread();
             GameObject p = ServerEventHandler.server.getObject(id);
             Method m = cachedMethods.get(method);
             if (m == null) {
@@ -60,12 +61,17 @@ public class GameObjectProxy {
             });
             if (method.equals("isStreamedForPlayer")) {
                 if (lst.get(0) == null) {
-                    return p.isStreamedForPlayer(null);
+                    boolean b = p.isStreamedForPlayer(null);
+                    ServerProxy.closeSyncBlock();
+                    return b;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
-                return p.isStreamedForPlayer(target);
+                boolean b = p.isStreamedForPlayer(target);
+                ServerProxy.closeSyncBlock();
+                return b;
             } else if (method.equals("getPosition") || method.equals("getRotationEuler")) {
                 Vector vec = (Vector) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
                     return null;
@@ -76,6 +82,7 @@ public class GameObjectProxy {
                 return obj;
             } else if (method.equals("getRotation")) {
                 Quaternion vec = (Quaternion) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
                     return null;
@@ -86,9 +93,10 @@ public class GameObjectProxy {
                 obj.setProperty("w", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.w));
                 return obj;
             }
-
+              ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }
         return null;

@@ -28,6 +28,7 @@ public class CheckpointProxy {
 
     public Object run(Integer id, String method, Object... args) {
         try {
+            ServerProxy.syncThread();
             CheckPoint p = ServerEventHandler.server.getCheckPoint(id);
             Method m = cachedMethods.get(method);
             if (m == null) {
@@ -61,34 +62,46 @@ public class CheckpointProxy {
 
             if (method.equals("isStreamedForPlayer")) {
                 if (lst.get(0) == null) {
-                    return p.isStreamedForPlayer(null);
+                    boolean b = p.isStreamedForPlayer(null);
+                    ServerProxy.closeSyncBlock();
+                    return b;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
-                return p.isStreamedForPlayer(target);
+                boolean b = p.isStreamedForPlayer(target);
+                ServerProxy.closeSyncBlock();
+                return b;
             } else if (method.equals("getColour")) {
-                return p.getColourHex();
+                int c = p.getColourHex();
+                ServerProxy.closeSyncBlock();
+                return c;
             } else if (method.equals("getPosition")) {
                 Vector vec = (Vector) m.invoke(p, lst.toArray());
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
+                ServerProxy.closeSyncBlock();
                 obj.setProperty("x", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.x));
                 obj.setProperty("y", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.y));
                 obj.setProperty("z", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.z));
                 return obj;
             } else if (method.equals("getOwner")) {
                 Player target = (Player) m.invoke(p, lst.toArray());
+
                 if (target == null) {
+                    ServerProxy.closeSyncBlock();
                     return null;
                 }
 
                 String playerObj = playerJs.replaceFirst("'#id'", target.getId() + "");
+                ServerProxy.closeSyncBlock();
                 return playerObj;
             }
-
+            ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }
         return null;

@@ -27,6 +27,7 @@ public class PickupProxy {
 
     public Object run(Integer id, String method, Object... args) {
         try {
+            ServerProxy.syncThread();
             Pickup p = ServerEventHandler.server.getPickup(id);
             Method m = cachedMethods.get(method);
             if (m == null) {
@@ -59,12 +60,17 @@ public class PickupProxy {
             });
             if (method.equals("isStreamedForPlayer")) {
                 if (lst.get(0) == null) {
-                    return p.isStreamedForPlayer(null);
+                    boolean b = p.isStreamedForPlayer(null);
+                    ServerProxy.closeSyncBlock();
+                    return b;
                 }
                 Player target = ServerEventHandler.server.getPlayer((int) lst.get(0));
-                return p.isStreamedForPlayer(target);
+                boolean b = p.isStreamedForPlayer(target);
+                ServerProxy.closeSyncBlock();
+                return b;
             } else if (method.equals("getPosition")) {
                 Vector vec = (Vector) m.invoke(p, lst.toArray());
+                ServerProxy.closeSyncBlock();
                 V8ValueObject obj = Context.v8.createV8ValueObject();
                 if (vec == null) {
                     return null;
@@ -74,9 +80,10 @@ public class PickupProxy {
                 obj.setProperty("z", ServerEventHandler.entityConverter.toV8Value(Context.v8, vec.z));
                 return obj;
             }
-
+            ServerProxy.closeSyncBlock();
             return m.invoke(p, lst.toArray());
         } catch (Exception ex) {
+            ServerProxy.closeSyncBlock();
             ex.printStackTrace();
         }
         return null;
