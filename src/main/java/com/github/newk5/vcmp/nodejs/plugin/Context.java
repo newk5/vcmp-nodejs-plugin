@@ -23,7 +23,7 @@ public class Context {
             Boolean val = functionMap.get(name);
             if (val == null) {
                 val = v8.getGlobalObject().has(name);
-                val = !val;
+
                 functionMap.put(name, val);
                 return val;
             } else {
