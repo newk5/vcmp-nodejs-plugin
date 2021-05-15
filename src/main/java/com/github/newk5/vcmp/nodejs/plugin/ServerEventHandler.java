@@ -12,10 +12,7 @@ import com.caoccao.javet.node.modules.NodeModuleProcess;
 import com.caoccao.javet.values.V8Value;
 import com.caoccao.javet.values.primitive.V8ValueBoolean;
 import com.caoccao.javet.values.primitive.V8ValueString;
-import com.caoccao.javet.values.reference.V8Module;
-import com.caoccao.javet.values.reference.V8ValueGlobalObject;
 import com.caoccao.javet.values.reference.V8ValueObject;
-import com.caoccao.javet.values.reference.V8ValuePromise;
 import static com.github.newk5.vcmp.nodejs.plugin.Context.v8;
 import com.github.newk5.vcmp.nodejs.plugin.proxies.CheckpointProxy;
 import com.github.newk5.vcmp.nodejs.plugin.proxies.GameObjectProxy;
@@ -29,7 +26,6 @@ import com.maxorator.vcmp.java.plugin.integration.placeable.GameObject;
 import com.maxorator.vcmp.java.plugin.integration.placeable.Pickup;
 import com.maxorator.vcmp.java.plugin.integration.player.Player;
 import com.maxorator.vcmp.java.plugin.integration.server.Server;
-import com.maxorator.vcmp.java.plugin.integration.server.SyncBlock;
 import com.maxorator.vcmp.java.plugin.integration.vehicle.Vehicle;
 
 import java.io.File;
@@ -41,15 +37,12 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerEventHandler extends RootEventHandler {
 
-    public static ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public static EntityConverter entityConverter;
     public static Server server;
     public static String playerJs = "";
@@ -60,12 +53,13 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private static String version = "v0.0.11";
+    private String version = "v0.0.11";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
-    private AtomicBoolean started = new AtomicBoolean(false);
+    private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
     private PlayerUpdateEvents playerUpdateEvents;
     private boolean isWin = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
+    private FileResourceUtils resources = new FileResourceUtils();
 
     public ServerEventHandler(Server server) throws IOException, InterruptedException, JavetException {
         super(server);
@@ -89,37 +83,29 @@ public class ServerEventHandler extends RootEventHandler {
                         }
                         key.reset();
                     }
-                } catch (IOException ex) {
-                    java.util.logging.Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (InterruptedException ex) {
-                    java.util.logging.Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }).start();
         }
         v8 = V8Host.getNodeInstance().createV8Runtime();
 
         Thread eventLoop = new Thread(() -> {
-            try {
-                started.set(true);
-                while (true) {
 
+            eventLoopStarted.set(true);
+            while (true) {
+
+                try {
                     v8.await();
-                    try {
-                        Thread.sleep(1);
-                    } catch (Exception ex) {
-                        Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    Thread.sleep(1);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
-
-            } catch (Exception ex) {
-                Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
+
         });
         eventLoop.setName("eventLoopThread");
         eventLoop.start();
-        while (!started.get()) {
-
-        }
 
     }
 
@@ -132,15 +118,14 @@ public class ServerEventHandler extends RootEventHandler {
         }
 
         try {
-            FileResourceUtils utils = new FileResourceUtils();
 
-            this.playerJs = utils.readResource("Player.js");
-            this.checkpointJs = utils.readResource("Checkpoint.js");
-            this.objectJs = utils.readResource("Object.js");
-            this.pickupJs = utils.readResource("Pickup.js");
-            this.vehicleJs = utils.readResource("Vehicle.js");
-            v8.getExecutor(utils.readResource("VCMPGlobals.js")).executeVoid();
-            v8.getExecutor(utils.readResource("Server.js")).executeVoid();
+            this.playerJs = resources.readResource("Player.js");
+            this.checkpointJs = resources.readResource("Checkpoint.js");
+            this.objectJs = resources.readResource("Object.js");
+            this.pickupJs = resources.readResource("Pickup.js");
+            this.vehicleJs = resources.readResource("Vehicle.js");
+            v8.getExecutor(resources.readResource("VCMPGlobals.js")).executeVoid();
+            v8.getExecutor(resources.readResource("Server.js")).executeVoid();
             init();
 
             System.out.println("");
@@ -150,8 +135,8 @@ public class ServerEventHandler extends RootEventHandler {
             System.out.println("");
             org.pmw.tinylog.Logger.info("Node.js context initilized");
             if (Context.functionExists("onServerInitialise")) {
-              
-                v8.getGlobalObject().invoke("onServerInitialise");
+
+                v8.getGlobalObject().invokeVoid("onServerInitialise");
 
             }
         } catch (Exception e) {
@@ -169,13 +154,13 @@ public class ServerEventHandler extends RootEventHandler {
 
             v8.getGlobalObject().setProperty("__dirname", dirname);
             v8.getGlobalObject().setProperty("__filename", filename);
+
             v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath());
-
+            //point to fake folder to fix relative require() paths to work when pointing to file in the same directory of main.js
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
+
             IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
-
             e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
-
             System.out.println(e.getResourceName());
 
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
@@ -207,10 +192,9 @@ public class ServerEventHandler extends RootEventHandler {
             dirname.close();
             filename.close();
 
-            FileResourceUtils utils = new FileResourceUtils();
-            v8.getExecutor(utils.readResource("byte-buffer.min.js")).executeVoid();
-            v8.getExecutor(utils.readResource("VCMPStream.js")).executeVoid();
-            //
+            v8.getExecutor(resources.readResource("byte-buffer.min.js")).executeVoid();
+            v8.getExecutor(resources.readResource("VCMPStream.js")).executeVoid();
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -254,7 +238,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerConnect(" + playerObj + "); ").execute();
+                v8.getExecutor("onPlayerConnect(" + playerObj + "); ").executeVoid();
 
             } catch (JavetException ex) {
                 ex.printStackTrace();
@@ -271,7 +255,7 @@ public class ServerEventHandler extends RootEventHandler {
             if (Context.functionExists("onServerLoadScripts")) {
 
                 try {
-                    v8.getGlobalObject().invoke("onServerLoadScripts");
+                    v8.getGlobalObject().invokeVoid("onServerLoadScripts");
 
                 } catch (JavetException ex) {
                     Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
@@ -318,8 +302,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", p.getId() + "");
 
-                v8.getExecutor("onPlayerWeaponChange(" + playerObj + ", " + oldWep + ", " + newWep + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerWeaponChange(" + playerObj + ", " + oldWep + ", " + newWep + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -334,8 +317,7 @@ public class ServerEventHandler extends RootEventHandler {
 
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerMove(" + playerObj + ", " + lastX + ", " + lastY + ", " + lastZ + ", " + newX + ", " + newY + ", " + newZ + " ); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerMove(" + playerObj + ", " + lastX + ", " + lastY + ", " + lastZ + ", " + newX + ", " + newY + ", " + newZ + " ); ").executeVoid();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -348,8 +330,8 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerHealthChange(" + playerObj + ", " + lastHP + ", " + newHP + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerHealthChange(" + playerObj + ", " + lastHP + ", " + newHP + "); ").executeVoid();
+
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -361,8 +343,8 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerArmourChange(" + playerObj + ", " + lastArmour + ", " + newArmour + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerArmourChange(" + playerObj + ", " + lastArmour + ", " + newArmour + "); ").executeVoid();
+
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -378,8 +360,7 @@ public class ServerEventHandler extends RootEventHandler {
                 try (V8ValueObject p = playerToV8Object(player);
                         V8ValueString o2 = new V8ValueString(list);) {
 
-                    v8.getGlobalObject().invoke("onPlayerModuleList", p, o2);
-                    // v8.getExecutor("triggerEL()").execute();
+                    v8.getGlobalObject().invokeVoid("onPlayerModuleList", p, o2);
 
                 }
 
@@ -395,7 +376,7 @@ public class ServerEventHandler extends RootEventHandler {
     public void onServerUnloadScripts() {
         if (Context.functionExists("onServerUnloadScripts")) {
             try {
-                v8.getGlobalObject().invoke("onServerUnloadScripts");
+                v8.getGlobalObject().invokeVoid("onServerUnloadScripts");
 
             } catch (Exception e) {
                 this.exception(e);
@@ -437,9 +418,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerSpawn(" + playerObj + "); ").execute();
-                v8.getGlobalObject().invoke("triggerEL()");
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerSpawn(" + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -453,8 +432,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerDisconnect(" + playerObj + ", " + reason + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerDisconnect(" + playerObj + ", " + reason + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -471,8 +449,7 @@ public class ServerEventHandler extends RootEventHandler {
 
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String vehicleObj = vehicleJs.replaceFirst("'#id'", vehicle.getId() + "");
-                v8.getExecutor("onPlayerEnterVehicle(" + playerObj + ", " + vehicleObj + "," + slot + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerEnterVehicle(" + playerObj + ", " + vehicleObj + "," + slot + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -488,8 +465,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String vehicleObj = vehicleJs.replaceFirst("'#id'", vehicle.getId() + "");
-                v8.getExecutor("onPlayerExitVehicle(" + playerObj + ", " + vehicleObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerExitVehicle(" + playerObj + ", " + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -503,8 +479,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String vehicleObj = vehicleJs.replaceFirst("'#id'", vehicle.getId() + "");
-                v8.getExecutor("onVehicleExplode(" + vehicleObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onVehicleExplode(" + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -521,7 +496,7 @@ public class ServerEventHandler extends RootEventHandler {
                     V8ValueString o2 = new V8ValueString(message);) {
 
                 Object o = v8.getGlobalObject().invoke("onPlayerCommand", p, o2);
-                // v8.getExecutor("triggerEL()").execute();
+
                 v8.getExecutor("delete global." + tempPlayerVar).executeVoid();
 
                 if (o != null && o instanceof V8ValueBoolean) {
@@ -565,8 +540,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String chObj = checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "");
-                v8.getExecutor("onCheckPointExited(" + playerObj + ", " + chObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onCheckPointExited(" + playerObj + ", " + chObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -582,8 +556,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String chObj = checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "");
-                v8.getExecutor("onCheckPointEntered(" + playerObj + ",  " + chObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onCheckPointEntered(" + playerObj + ",  " + chObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -596,8 +569,7 @@ public class ServerEventHandler extends RootEventHandler {
         if (Context.functionExists("onPickupRespawn")) {
             try {
                 String pobj = pickupJs.replaceFirst("'#id'", pickup.getId() + "");
-                v8.getExecutor("onPickupRespawn(" + pobj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPickupRespawn(" + pobj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -613,8 +585,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String pobj = pickupJs.replaceFirst("'#id'", pickup.getId() + "");
-                v8.getExecutor("onPickupPicked(" + pobj + ", " + playerObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPickupPicked(" + pobj + ", " + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -632,7 +603,6 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String pobj = pickupJs.replaceFirst("'#id'", pickup.getId() + "");
                 Boolean o = v8.getExecutor("onPickupPickAttempt(" + pobj + ", " + playerObj + "); ").executeBoolean();
-                // v8.getExecutor("triggerEL()").execute();
 
                 if (o != null) {
                     return o;
@@ -654,8 +624,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String pobj = objectJs.replaceFirst("'#id'", object.getId() + "");
 
-                v8.getExecutor("onObjectTouched(" + pobj + ", " + playerObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onObjectTouched(" + pobj + ", " + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -671,8 +640,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String pobj = objectJs.replaceFirst("'#id'", object.getId() + "");
 
-                v8.getExecutor("onObjectShot(" + pobj + ", " + playerObj + ", " + weaponId + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onObjectShot(" + pobj + ", " + playerObj + ", " + weaponId + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -686,8 +654,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String vehicleObj = vehicleJs.replaceFirst("'#id'", vehicle.getId() + "");
-                v8.getExecutor("onVehicleRespawn(" + vehicleObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onVehicleRespawn(" + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -702,8 +669,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String vehicleObj = playerJs.replaceFirst("'#id'", vehicle.getId() + "");
-                v8.getExecutor("onVehicleUpdate(" + vehicleObj + ", " + updateType + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onVehicleUpdate(" + vehicleObj + ", " + updateType + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -720,8 +686,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String playerObj2 = playerJs.replaceFirst("'#id'", spectated.getId() + "");
 
-                v8.getExecutor("onPlayerSpectate(" + playerObj + ", " + playerObj2 + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerSpectate(" + playerObj + ", " + playerObj2 + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -736,8 +701,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerKeyBindUp(" + playerObj + ", " + keyBindIndex + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerKeyBindUp(" + playerObj + ", " + keyBindIndex + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -751,8 +715,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerKeyBindDown(" + playerObj + ", " + keyBindIndex + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerKeyBindDown(" + playerObj + ", " + keyBindIndex + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -771,7 +734,6 @@ public class ServerEventHandler extends RootEventHandler {
                     Object o = v8.getGlobalObject().invoke("onPlayerPrivateMessage", p, p2, s);
 
                     v8.getExecutor("delete global." + tempPlayerVar).executeVoid();
-                    // v8.getExecutor("triggerEL()").execute();
 
                     if (o != null && o instanceof V8ValueBoolean) {
                         V8ValueBoolean b = (V8ValueBoolean) o;
@@ -798,7 +760,6 @@ public class ServerEventHandler extends RootEventHandler {
                     Object o = v8.getGlobalObject().invoke("onPlayerMessage", p, s);
 
                     v8.getExecutor("delete global." + tempPlayerVar).executeVoid();
-                    // v8.getExecutor("triggerEL()").execute();
 
                     if (o != null && o instanceof V8ValueBoolean) {
                         V8ValueBoolean b = (V8ValueBoolean) o;
@@ -819,8 +780,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerAwayChange(" + playerObj + ", " + isAway + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerAwayChange(" + playerObj + ", " + isAway + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -835,8 +795,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerBeginTyping(" + playerObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerBeginTyping(" + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -850,8 +809,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerBeginTyping(" + playerObj + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerBeginTyping(" + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -865,8 +823,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerGameKeysChange(" + playerObj + ", " + oldKeys + ", " + newKeys + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerGameKeysChange(" + playerObj + ", " + oldKeys + ", " + newKeys + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -880,8 +837,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerCrouchChange(" + playerObj + ", " + isCrouching + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerCrouchChange(" + playerObj + ", " + isCrouching + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -895,8 +851,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
-                v8.getExecutor("onPlayerOnFireChange(" + playerObj + ", " + isOnFire + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerOnFireChange(" + playerObj + ", " + isOnFire + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -911,8 +866,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerActionChange(" + playerObj + ", " + oldAction + ", " + newAction + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerActionChange(" + playerObj + ", " + oldAction + ", " + newAction + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -931,8 +885,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerStateChange(" + playerObj + ", " + oldState + ", " + newState + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerStateChange(" + playerObj + ", " + oldState + ", " + newState + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -983,7 +936,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String vehicleObj = vehicleJs.replaceFirst("'#id'", vehicle.getId() + "");
 
                 Boolean o = v8.getExecutor("onPlayerRequestEnterVehicle(" + playerObj + ", " + vehicleObj + ", " + slot + "); ").executeBoolean();
-                // v8.getExecutor("triggerEL()").execute();
+
                 if (o != null) {
                     return o;
                 }
@@ -1005,8 +958,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onPlayerUpdate(" + playerObj + ", " + updateType + "); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerUpdate(" + playerObj + ", " + updateType + "); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -1023,8 +975,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
                 String playerObj2 = playerJs.replaceFirst("'#id'", killer == null ? "-1" : killer.getId() + "");
 
-                v8.getExecutor("onPlayerDeath(" + playerObj + ", " + (killer == null ? "null" : playerObj2) + "," + reason + ", " + bodyPart + " ); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onPlayerDeath(" + playerObj + ", " + (killer == null ? "null" : playerObj2) + "," + reason + ", " + bodyPart + " ); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -1040,7 +991,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
                 Boolean o = v8.getExecutor("onPlayerRequestSpawn(" + playerObj + "); ").executeBoolean();
-                // v8.getExecutor("triggerEL()").execute();
+
                 if (o != null) {
                     return o;
                 }
@@ -1060,7 +1011,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
                 Boolean o = v8.getExecutor("onPlayerRequestClass(" + playerObj + "," + classIndex + " ); ").executeBoolean();
-                // v8.getExecutor("triggerEL()").execute();
+
                 if (o != null) {
                     return o;
                 }
@@ -1080,8 +1031,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String playerObj = playerJs.replaceFirst("'#id'", player.getId() + "");
 
-                v8.getExecutor("onClientScriptData(" + playerObj + ", new VCMPStream(" + Arrays.toString(data) + ")); ").execute();
-                // v8.getExecutor("triggerEL()").execute();
+                v8.getExecutor("onClientScriptData(" + playerObj + ", new VCMPStream(" + Arrays.toString(data) + ")); ").executeVoid();
 
             } catch (Exception e) {
                 this.exception(e);
@@ -1090,13 +1040,14 @@ public class ServerEventHandler extends RootEventHandler {
         }
     }
 
+    //not being used
     @Override
     public void onPluginCommand(int identifier, String message) {
         if (Context.functionExists("onPluginCommand")) {
 
             try {
 
-                //v8.getExecutor("onPluginCommand(" + identifier + ", '" + message + "'); ").execute();
+                //v8.getExecutor("onPluginCommand(" + identifier + ", '" + message + "'); ").executeVoid();
                 // 
             } catch (Exception e) {
                 this.exception(e);
@@ -1108,7 +1059,7 @@ public class ServerEventHandler extends RootEventHandler {
     public void onServerShutdown() {
         if (Context.functionExists("onServerShutdown")) {
             try {
-                v8.getGlobalObject().invoke("onServerShutdown");
+                v8.getGlobalObject().invokeVoid("onServerShutdown");
 
             } catch (Exception e) {
                 this.exception(e);

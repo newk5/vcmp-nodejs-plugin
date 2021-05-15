@@ -22,7 +22,7 @@ public class Context {
         try {
             Boolean val = functionMap.get(name);
             if (val == null) {
-                val = v8.getGlobalObject().get(name) instanceof V8ValueUndefined;
+                val = v8.getGlobalObject().has(name);
                 val = !val;
                 functionMap.put(name, val);
                 return val;
@@ -39,7 +39,5 @@ public class Context {
     public static boolean playerUpdateFunctionsExist() {
         return false;
     }
-
-  
 
 }
