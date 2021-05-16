@@ -6,7 +6,10 @@ var a = {
     setDoorStatus : function(door,status) {  __VehicleProxy.setDoorStatus(this.id, door, status);  },
     setTyreStatus : function(tyre,status) {  return __VehicleProxy.setTyreStatus(this.id, tyre,status);  },
     setPanelStatus : function(pane,status) {  return __VehicleProxy.setPanelStatus(this.id, panel,status);  },
-    delete : function ( ){  __VehicleProxy.run(this.id, 'delete', arguments); },
+    delete : function ( ){  
+        __VehicleProxy.run(this.id, 'delete', arguments);
+        VCMP.VehicleData[this.id]  = {};
+    },
     setSpawnRotationEuler : function ( arg0, arg1, arg2 ){  __VehicleProxy.run(this.id, 'setSpawnRotationEuler', arguments); },
     isStreamedForPlayer : function ( arg0 ){ return  __PlayerProxy.run(this.id, 'isStreamedForPlayer', [arg0.id]); },
     getSpawnRotationEuler : function ( ){ return  __VehicleProxy.run(this.id, 'getSpawnRotationEuler', arguments); },
@@ -62,6 +65,15 @@ var a = {
     getColours : function ( ){ return  __VehicleProxy.run(this.id, 'getColours', arguments); },
     getId : function ( ){ return  __VehicleProxy.run(this.id, 'getId', arguments); },
     isValid : function ( ){ return  __VehicleProxy.run(this.id, 'isValid', arguments); },
+    attachData : function(){
+        let data = VCMP.VehicleData[this.id];
+        if (data==undefined){
+            VCMP.VehicleData[this.id]  = {};
+            data  = VCMP.VehicleData[this.id];
+        }
+        this["data"] = data;
+        return this;
+    },
     print : function() {    var result = [];     for (var id in this) {   try {  if (typeof(this[id]) == "function") {  result.push(id + ": " + this[id].toString().split(")")[0]+")" );  }  } catch (err) { result.push(id + ": inaccessible");   }    }  console.log(result);  }
 
    

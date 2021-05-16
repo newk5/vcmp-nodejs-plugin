@@ -1,6 +1,9 @@
 var a = {
     id : '#id',
-    delete : function ( ){  __GameObjectProxy.run(this.id, 'delete', arguments); },
+    delete : function ( ){  
+        __GameObjectProxy.run(this.id, 'delete', arguments);
+        VCMP.ObjectData[this.id]  = {};
+    },
     setShotReportEnabled : function ( arg0 ){  __GameObjectProxy.run(this.id, 'setShotReportEnabled', arguments); },
     isShotReportEnabled : function ( ){ return  __GameObjectProxy.run(this.id, 'isShotReportEnabled', arguments); },
     isTouchedReportEnabled : function ( ){ return  __GameObjectProxy.run(this.id, 'isTouchedReportEnabled', arguments); },
@@ -22,6 +25,15 @@ var a = {
     rotateTo : function ( arg0, arg1, arg2, arg3, arg4 ){  __GameObjectProxy.run(this.id, 'rotateTo', arguments); },
     getRotationEuler : function ( ){ return  __GameObjectProxy.run(this.id, 'getRotationEuler', arguments); },
     getId : function ( ){ return  __GameObjectProxy.run(this.id, 'getId', arguments); },
+    attachData : function(){
+        let data = VCMP.ObjectData[this.id];
+        if (data==undefined){
+            VCMP.ObjectData[this.id]  = {};
+            data  = VCMP.ObjectData[this.id];
+        }
+        this["data"] = data;
+        return this;
+    },
     print : function() {    var result = [];     for (var id in this) {   try {  if (typeof(this[id]) == "function") {  result.push(id + ": " + this[id].toString().split(")")[0]+")" );  }  } catch (err) { result.push(id + ": inaccessible");   }    }  console.log(result);  }
 
     

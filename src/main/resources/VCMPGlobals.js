@@ -308,5 +308,20 @@ const VCMP = {
         BLOODRING1: 234,
         BLOODRING2: 235,
         CHEETAHFBI: 236
+    },
+    PlayerData: {
+
+    },
+    VehicleData: {
+
+    },
+    PickupData: {
+
+    },
+    CheckpointData: {
+
+    },
+    ObjectData: {
+
     }
 };

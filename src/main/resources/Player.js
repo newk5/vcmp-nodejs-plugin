@@ -100,7 +100,16 @@ var a = {
     removeWeapon : function ( arg0 ){  __PlayerProxy.run(this.id, 'removeWeapon', arguments); },
     getId : function ( ){ return  __PlayerProxy.run(this.id, 'getId', arguments); },
     isValid : function ( ){ return  __PlayerProxy.run(this.id, 'isValid', arguments); },
-    print : function() {    var result = [];     for (var id in this) {   try {  if (typeof(this[id]) == "function") {  result.push(id + ": " + this[id].toString().split(")")[0]+")" );  }  } catch (err) { result.push(id + ": inaccessible");   }    }  console.log(result);  }
+    print : function() {    var result = [];     for (var id in this) {   try {  if (typeof(this[id]) == "function") {  result.push(id + ": " + this[id].toString().split(")")[0]+")" );  }  } catch (err) { result.push(id + ": inaccessible");   }    }  console.log(result);  },
+    attachData : function(){
+        let data = VCMP.PlayerData[this.id];
+        if (data==undefined){
+            VCMP.PlayerData[this.id]  = {};
+            data  = VCMP.PlayerData[this.id];
+        }
+        this["data"] = data;
+        return this;
+    }
 
    
  }
