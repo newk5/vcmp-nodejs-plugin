@@ -21,6 +21,7 @@ import com.github.newk5.vcmp.nodejs.plugin.proxies.ServerProxy;
 import com.github.newk5.vcmp.nodejs.plugin.proxies.VehicleProxy;
 
 import com.maxorator.vcmp.java.plugin.integration.RootEventHandler;
+import com.maxorator.vcmp.java.plugin.integration.generic.Colour;
 import com.maxorator.vcmp.java.plugin.integration.placeable.CheckPoint;
 import com.maxorator.vcmp.java.plugin.integration.placeable.GameObject;
 import com.maxorator.vcmp.java.plugin.integration.placeable.Pickup;
@@ -53,7 +54,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v0.0.11";
+    private String version = "v0.1.0";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -236,6 +237,7 @@ public class ServerEventHandler extends RootEventHandler {
 
         if (Context.functionExists("onPlayerConnect")) {
             try {
+                player.setColour(new Colour(0, 0, 0, 0));
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerConnect(" + playerObj + "); ").executeVoid();
@@ -449,7 +451,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
 
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String vehicleObj = "("+vehicleJs.replaceFirst("'#id'", vehicle.getId() + "")+").attachData()";
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onPlayerEnterVehicle(" + playerObj + ", " + vehicleObj + "," + slot + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -465,7 +467,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String vehicleObj = "("+vehicleJs.replaceFirst("'#id'", vehicle.getId() + "")+").attachData()";
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onPlayerExitVehicle(" + playerObj + ", " + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -479,7 +481,7 @@ public class ServerEventHandler extends RootEventHandler {
         if (Context.functionExists("onVehicleExplode")) {
 
             try {
-                String vehicleObj = "("+vehicleJs.replaceFirst("'#id'", vehicle.getId() + "")+").attachData()";
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onVehicleExplode(" + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -557,7 +559,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String chObj =  "(" + checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "") + ").attachData()" ;
+                String chObj = "(" + checkpointJs.replaceFirst("'#id'", checkPoint.getId() + "") + ").attachData()";
                 v8.getExecutor("onCheckPointEntered(" + playerObj + ",  " + chObj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -570,7 +572,7 @@ public class ServerEventHandler extends RootEventHandler {
     public void onPickupRespawn(Pickup pickup) {
         if (Context.functionExists("onPickupRespawn")) {
             try {
-                String pobj = "("+ pickupJs.replaceFirst("'#id'", pickup.getId() + "")+").attachData()";
+                String pobj = "(" + pickupJs.replaceFirst("'#id'", pickup.getId() + "") + ").attachData()";
                 v8.getExecutor("onPickupRespawn(" + pobj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -586,7 +588,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String pobj = "("+ pickupJs.replaceFirst("'#id'", pickup.getId() + "")+").attachData()";
+                String pobj = "(" + pickupJs.replaceFirst("'#id'", pickup.getId() + "") + ").attachData()";
                 v8.getExecutor("onPickupPicked(" + pobj + ", " + playerObj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -603,7 +605,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String pobj = "(" + "("+ pickupJs.replaceFirst("'#id'", pickup.getId() + "")+").attachData()" + ").attachData()";
+                String pobj = "(" + "(" + pickupJs.replaceFirst("'#id'", pickup.getId() + "") + ").attachData()" + ").attachData()";
                 Boolean o = v8.getExecutor("onPickupPickAttempt(" + pobj + ", " + playerObj + "); ").executeBoolean();
 
                 if (o != null) {
@@ -655,7 +657,7 @@ public class ServerEventHandler extends RootEventHandler {
         if (Context.functionExists("onVehicleRespawn")) {
 
             try {
-                String vehicleObj = "("+vehicleJs.replaceFirst("'#id'", vehicle.getId() + "")+").attachData()";
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onVehicleRespawn(" + vehicleObj + "); ").executeVoid();
 
             } catch (Exception e) {
@@ -935,7 +937,7 @@ public class ServerEventHandler extends RootEventHandler {
 
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
-                String vehicleObj = "("+vehicleJs.replaceFirst("'#id'", vehicle.getId() + "")+").attachData()";
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
 
                 Boolean o = v8.getExecutor("onPlayerRequestEnterVehicle(" + playerObj + ", " + vehicleObj + ", " + slot + "); ").executeBoolean();
 

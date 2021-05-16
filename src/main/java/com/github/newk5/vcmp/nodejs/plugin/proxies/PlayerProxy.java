@@ -117,7 +117,7 @@ public class PlayerProxy {
                         .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
                         .filter(me -> {
                             boolean b = Arrays.equals(me.getParameterTypes(), paramTypes.toArray());
-                            if (method.equals("getOption") || method.equals("setOption")) {
+                            if (method.equals("getOption") || method.equals("setOption") || method.equals("setColour")) {
                                 return b;
                             }
                             return true;

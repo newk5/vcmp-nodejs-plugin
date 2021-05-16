@@ -35,11 +35,8 @@ var a = {
     setLightsData : function ( arg0 ){  __VehicleProxy.run(this.id, 'setLightsData', arguments); },
     setTaxiLight : function ( arg0 ){  __VehicleProxy.run(this.id, 'setTaxiLight', arguments); },
     setPosition : function ( arg0, arg1, arg2 ){  __VehicleProxy.run(this.id, 'setPosition', arguments); },
-    getDamage : function ( ){ return  __VehicleProxy.run(this.id, 'getDamage', arguments); },
     getRotationEuler : function ( ){ return  __VehicleProxy.run(this.id, 'getRotationEuler', arguments); },
-    setDamage : function ( arg0 ){  __VehicleProxy.run(this.id, 'setDamage', arguments); },
     getSpawnPosition : function ( ){ return  __VehicleProxy.run(this.id, 'getSpawnPosition', arguments); },
-    getDamageHex : function ( ){ return  __VehicleProxy.run(this.id, 'getDamageHex', arguments); },
     getHealth : function ( ){ return  __VehicleProxy.run(this.id, 'getHealth', arguments); },
     getTaxiLight : function ( ){ return  __VehicleProxy.run(this.id, 'getTaxiLight', arguments); },
     setRadio : function ( arg0 ){  __VehicleProxy.run(this.id, 'setRadio', arguments); },
@@ -55,7 +52,17 @@ var a = {
     setTurnSpeed : function ( arg0, arg1, arg2, arg3, arg4 ){  __VehicleProxy.run(this.id, 'setTurnSpeed', arguments); },
     setSpawnRotation : function ( arg0, arg1, arg2, arg3 ){  __VehicleProxy.run(this.id, 'setSpawnRotation', arguments); },
     getSpawnRotation : function ( ){ return  __VehicleProxy.run(this.id, 'getSpawnRotation', arguments); },
-    setColours : function ( arg0, arg1 ){  __VehicleProxy.run(this.id, 'setColours', arguments); },
+    setColours : function ( arg0 ){ 
+        let primary = arg0.primary;
+        if (typeof primary === 'object' && primary !== null){
+            primary = VCMP.Colors.toHex(primary);
+        }
+        let secondary = arg0.secondary;
+        if (typeof secondary === 'object' && secondary !== null){
+            secondary = VCMP.Colors.toHex(secondary);
+        }
+        __VehicleProxy.run(this.id, 'setColours', [primary,secondary]);
+    },
     getLightsData : function ( ){ return  __VehicleProxy.run(this.id, 'getLightsData', arguments); },
     getHandlingRule : function ( arg0 ){ return  __VehicleProxy.run(this.id, 'getHandlingRule', arguments); },
     setRotation : function ( arg0, arg1, arg2, arg3 ){  __VehicleProxy.run(this.id, 'setRotation', arguments); },

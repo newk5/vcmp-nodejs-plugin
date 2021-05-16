@@ -31,15 +31,6 @@ public class CheckpointProxy {
             ServerProxy.syncThread();
             CheckPoint p = ServerEventHandler.server.getCheckPoint(id);
             Method m = cachedMethods.get(method);
-            if (m == null) {
-                m = Arrays
-                        .stream(methods)
-                        .filter(me -> me.getName()
-                        .equals(method))
-                        .findAny().get();
-                cachedMethods.put(method, m);
-
-            }
 
             V8ValueArray arr = (V8ValueArray) args[0];
             List<Object> lst = new ArrayList<>();
@@ -59,6 +50,16 @@ public class CheckpointProxy {
                     lst.add(((V8ValueLong) v).toPrimitive());
                 }
             });
+            if (m == null) {
+                m = Arrays
+                        .stream(methods)
+                        .filter(me -> me.getName().equals(method))
+                        .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
+
+                        .findAny().get();
+                cachedMethods.put(method, m);
+
+            }
 
             if (method.equals("isStreamedForPlayer")) {
                 if (lst.get(0) == null) {

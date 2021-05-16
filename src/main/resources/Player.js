@@ -37,7 +37,6 @@ var a = {
     getWorld : function ( ){ return  __PlayerProxy.run(this.id, 'getWorld', arguments); },
     forceSpawn : function ( ){  __PlayerProxy.run(this.id, 'forceSpawn', arguments); },
     forceSelect : function ( ){  __PlayerProxy.run(this.id, 'forceSelect', arguments); },
-    getColourHex : function ( ){ return  __PlayerProxy.run(this.id, 'getColourHex', arguments); },
     setHealth : function ( arg0 ){  __PlayerProxy.run(this.id, 'setHealth', arguments); },
     getArmour : function ( ){ return  __PlayerProxy.run(this.id, 'getArmour', arguments); },
     getImmunities : function ( ){ return  __PlayerProxy.run(this.id, 'getImmunities', arguments); },
@@ -63,7 +62,16 @@ var a = {
     getScore : function ( ){ return  __PlayerProxy.run(this.id, 'getScore', arguments); },
     getUID : function ( ){ return  __PlayerProxy.run(this.id, 'getUID', arguments); },
     setImmunityFlags : function ( arg0 ){  __PlayerProxy.run(this.id, 'setImmunityFlags', arguments); },
-    getColour : function ( ){ return  __PlayerProxy.run(this.id, 'getColour', arguments); },
+    getColour : function ( ){ 
+        let v =  __PlayerProxy.run(this.id, 'getColour', arguments); 
+        if (arguments.length >0){
+            const type = arguments[0].toLowerCase();
+            if (type == "rgb"){
+                v = VCMP.Colors.toRGB(v);
+            }
+        }
+        return v;
+    },
     getPosition : function ( ){ return  __PlayerProxy.run(this.id, 'getPosition', arguments); },
     getGameKeys : function ( ){ return  __PlayerProxy.run(this.id, 'getGameKeys', arguments); },
     getOption : function ( arg0 ){ return  __PlayerProxy.run(this.id, 'getOption', arguments); },
@@ -75,7 +83,11 @@ var a = {
     getWeaponAmmo : function ( ){ return  __PlayerProxy.run(this.id, 'getWeaponAmmo', arguments); },
     getAction : function ( ){ return  __PlayerProxy.run(this.id, 'getAction', arguments); },
     getAimDirection : function ( ){ return  __PlayerProxy.run(this.id, 'getAimDirection', arguments); },
-    setColour : function ( arg0 ){  __PlayerProxy.run(this.id, 'setColour', arguments); },
+    setColour : function ( arg0 ){  
+        const isObj = typeof arg0 === 'object' && arg0 !== null;
+        
+        __PlayerProxy.run(this.id, 'setColour', isObj ? [VCMP.Colors.toHex(arg0)] : [arg0]); 
+    },
     getTeam : function ( ){ return  __PlayerProxy.run(this.id, 'getTeam', arguments); },
     getPing : function ( ){ return  __PlayerProxy.run(this.id, 'getPing', arguments); },
     getUID2 : function ( ){ return  __PlayerProxy.run(this.id, 'getUID2', arguments); },
