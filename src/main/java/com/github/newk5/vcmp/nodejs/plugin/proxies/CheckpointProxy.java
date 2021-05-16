@@ -54,7 +54,12 @@ public class CheckpointProxy {
                 m = Arrays
                         .stream(methods)
                         .filter(me -> me.getName().equals(method))
-                        .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
+                        .filter(me -> {
+                            if (method.equals("getColour")) {
+                                return true;
+                            }
+                            return me.getParameterCount() == lst.size();
+                        }) //make sure method signature matches
 
                         .findAny().get();
                 cachedMethods.put(method, m);

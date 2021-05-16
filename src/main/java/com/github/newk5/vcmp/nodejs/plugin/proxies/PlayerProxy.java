@@ -114,7 +114,12 @@ public class PlayerProxy {
                 m = Arrays
                         .stream(methods)
                         .filter(me -> me.getName().equals(method))
-                        .filter(me -> me.getParameterCount() == lst.size()) //make sure method signature matches
+                        .filter(me -> {
+                            if (method.equals("getColour")){
+                                return true;
+                            }
+                            return me.getParameterCount() == lst.size();
+                        }) //make sure method signature matches
                         .filter(me -> {
                             boolean b = Arrays.equals(me.getParameterTypes(), paramTypes.toArray());
                             if (method.equals("getOption") || method.equals("setOption") || method.equals("setColour")) {
