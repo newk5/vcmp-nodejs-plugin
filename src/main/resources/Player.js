@@ -63,7 +63,7 @@ var a = {
     getUID : function ( ){ return  __PlayerProxy.run(this.id, 'getUID', arguments); },
     setImmunityFlags : function ( arg0 ){  __PlayerProxy.run(this.id, 'setImmunityFlags', arguments); },
     getColour : function ( ){ 
-        let v =  __PlayerProxy.run(this.id, 'getColour', arguments); 
+        let v =  __PlayerProxy.run(this.id, 'getColour', []); 
         if (arguments.length >0){
             const type = arguments[0].toLowerCase();
             if (type == "rgb"){
@@ -84,9 +84,10 @@ var a = {
     getAction : function ( ){ return  __PlayerProxy.run(this.id, 'getAction', arguments); },
     getAimDirection : function ( ){ return  __PlayerProxy.run(this.id, 'getAimDirection', arguments); },
     setColour : function ( arg0 ){  
+
         const isObj = typeof arg0 === 'object' && arg0 !== null;
         
-        __PlayerProxy.run(this.id, 'setColour', isObj ? [VCMP.Colors.toHex(arg0)] : [arg0]); 
+        __PlayerProxy.run(this.id, 'setColour', isObj ? [VCMP.Colors.toHex(arg0)] : [ VCMP.Colors.hexToInteger(arg0) ]); 
     },
     getTeam : function ( ){ return  __PlayerProxy.run(this.id, 'getTeam', arguments); },
     getPing : function ( ){ return  __PlayerProxy.run(this.id, 'getPing', arguments); },

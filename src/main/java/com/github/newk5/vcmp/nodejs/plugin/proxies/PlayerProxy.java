@@ -89,6 +89,7 @@ public class PlayerProxy {
             List<Object> lst = new ArrayList<>();
             List<Class> paramTypes = new ArrayList<>();
             arr.forEach((k, v) -> {
+
                 if (v instanceof V8ValueNull) {
                     lst.add(null);
 
@@ -102,8 +103,16 @@ public class PlayerProxy {
                     lst.add(((V8ValueInteger) v).toPrimitive());
                     paramTypes.add(int.class);
                 } else if (v instanceof V8ValueDouble) {
-                    lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive() + ""));
-                    paramTypes.add(double.class);
+                    if (method.equals("setColour")) {
+                        V8ValueDouble d = (V8ValueDouble) v;
+                        Double nd = d.toPrimitive();
+                        lst.add(nd.intValue());
+                        paramTypes.add(int.class);
+                    } else {
+                        lst.add(Float.valueOf(((V8ValueDouble) v).toPrimitive() + ""));
+                        paramTypes.add(double.class);
+                    }
+
                 } else if (v instanceof V8ValueLong) {
                     lst.add(((V8ValueLong) v).toPrimitive());
                     paramTypes.add(long.class);
@@ -115,7 +124,7 @@ public class PlayerProxy {
                         .stream(methods)
                         .filter(me -> me.getName().equals(method))
                         .filter(me -> {
-                            if (method.equals("getColour")){
+                            if (method.equals("getColour")) {
                                 return true;
                             }
                             return me.getParameterCount() == lst.size();
@@ -223,6 +232,9 @@ public class PlayerProxy {
                 ServerProxy.closeSyncBlock();
                 return obj;
 
+            }
+            if (method.equals("setColour")) {
+                System.out.println("");
             }
 
             Object o = m.invoke(p, lst.toArray());

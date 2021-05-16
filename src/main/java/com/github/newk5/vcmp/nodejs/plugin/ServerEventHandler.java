@@ -491,7 +491,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     @Override
     public boolean onPlayerCommand(Player player, String message) {
-
+       
         if (Context.functionExists("onPlayerCommand")) {
 
             try (V8ValueObject p = playerToV8Object(player);

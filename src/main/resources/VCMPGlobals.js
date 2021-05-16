@@ -334,10 +334,21 @@ const VCMP = {
             return {r: r, g: g, b: b, a: a};
         },
         toHex: function (rgbObj) {
-            const red = rgbObj.r ;
-            const green = rgbObj.g ;
-            const blue = rgbObj.b ;
-            const alpha = rgbObj.a ;
+            const red = rgbObj.r;
+            const green = rgbObj.g;
+            const blue = rgbObj.b;
+            const alpha = rgbObj.a;
+            return  ((alpha & 0xFF) << 24) | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
+        },
+        hexToInteger: function (hex) {
+            let blue = hex & 0xFF;
+            hex >>>= 8;
+            let green = hex & 0xFF;
+            hex >>>= 8;
+            let red = hex & 0xFF;
+            hex >>>= 8;
+            let alpha = hex;
+
             return  ((alpha & 0xFF) << 24) | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
         }
     }
