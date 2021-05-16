@@ -108,6 +108,10 @@ public class ServerEventHandler extends RootEventHandler {
         eventLoop.setName("eventLoopThread");
         eventLoop.start();
 
+        while(!eventLoopStarted.get()){
+            
+        }
+        
     }
 
     @Override
