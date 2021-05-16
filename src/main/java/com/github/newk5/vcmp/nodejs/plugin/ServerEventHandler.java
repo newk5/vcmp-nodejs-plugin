@@ -237,7 +237,6 @@ public class ServerEventHandler extends RootEventHandler {
 
         if (Context.functionExists("onPlayerConnect")) {
             try {
-                player.setColour(new Colour(0, 0, 0, 0));
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerConnect(" + playerObj + "); ").executeVoid();
