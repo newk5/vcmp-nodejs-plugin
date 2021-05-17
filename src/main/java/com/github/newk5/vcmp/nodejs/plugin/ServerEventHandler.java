@@ -54,7 +54,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v0.1.1";
+    private String version = "v1.0.0";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -108,10 +108,10 @@ public class ServerEventHandler extends RootEventHandler {
         eventLoop.setName("eventLoopThread");
         eventLoop.start();
 
-        while(!eventLoopStarted.get()){
-            
+        while (!eventLoopStarted.get()) {
+
         }
-        
+
     }
 
     @Override
@@ -160,12 +160,13 @@ public class ServerEventHandler extends RootEventHandler {
             v8.getGlobalObject().setProperty("__dirname", dirname);
             v8.getGlobalObject().setProperty("__filename", filename);
 
+            IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
+
+            e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
             v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath());
             //point to fake folder to fix relative require() paths to work when pointing to file in the same directory of main.js
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
 
-            IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
-            e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
             System.out.println(e.getResourceName());
 
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
@@ -495,7 +496,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     @Override
     public boolean onPlayerCommand(Player player, String message) {
-       
+
         if (Context.functionExists("onPlayerCommand")) {
 
             try (V8ValueObject p = playerToV8Object(player);
