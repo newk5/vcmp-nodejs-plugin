@@ -50,20 +50,20 @@ public class ServerProxy {
     private V8ValueObject tempObj;
 
     public void overrideObjectGetters() throws JavetException {
-        String playerObj = playerJs.replaceFirst("'#id'", "arg0");
-        String playerObjId = playerJs.replaceFirst("'#id'", "id");
-        String playerObjGetAll = playerJs.replaceFirst("'#id'", "ids[i]");
-        String vehicleObjGetAll = vehicleJs.replaceFirst("'#id'", "ids[i]");
+        String playerObj = "(" + playerJs.replaceFirst("'#id'", "arg0") + ").attachData()";
+        String playerObjId = "(" + playerJs.replaceFirst("'#id'", "id") + ").attachData()";
+        String playerObjGetAll = "(" + playerJs.replaceFirst("'#id'", "ids[i]") + ").attachData()";
+        String vehicleObjGetAll = "(" +vehicleJs.replaceFirst("'#id'", "ids[i]") + ").attachData()";
 
-        String gameObj = objectJs.replaceFirst("'#id'", "arg0");
-        String pobj = pickupJs.replaceFirst("'#id'", "arg0");
-        String vehicleObj = vehicleJs.replaceFirst("'#id'", "arg0");
-        String chObj = checkpointJs.replaceFirst("'#id'", "arg0");
+        String gameObj = "(" + objectJs.replaceFirst("'#id'", "arg0") + ").attachData()";
+        String pobj = "(" + pickupJs.replaceFirst("'#id'", "arg0") + ").attachData()";
+        String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", "arg0") + ").attachData()";
+        String chObj = "(" + checkpointJs.replaceFirst("'#id'", "arg0") + ").attachData()";
 
-        String chObjId = checkpointJs.replaceFirst("'#id'", "id");
-        String gameObjId = objectJs.replaceFirst("'#id'", "id");
-        String pobjId = pickupJs.replaceFirst("'#id'", "id");
-        String vehicleObjId = vehicleJs.replaceFirst("'#id'", "id");
+        String chObjId = "(" + checkpointJs.replaceFirst("'#id'", "id") + ").attachData()";
+        String gameObjId = "(" + objectJs.replaceFirst("'#id'", "id") + ").attachData()";
+        String pobjId = "(" + pickupJs.replaceFirst("'#id'", "id") + ").attachData()";
+        String vehicleObjId = "(" + vehicleJs.replaceFirst("'#id'", "id") + ").attachData()";
 
         Context.v8.getExecutor(""
                 + "server.sendClientMessageToAll = function( msg ) { __ServerProxy.sendClientMessageToAll(msg); };  "

@@ -54,7 +54,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v1.0.0";
+    private String version = "v1.0.1";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -676,7 +676,7 @@ public class ServerEventHandler extends RootEventHandler {
         if (Context.functionExists("onVehicleUpdate")) {
 
             try {
-                String vehicleObj = playerJs.replaceFirst("'#id'", vehicle.getId() + "");
+                String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onVehicleUpdate(" + vehicleObj + ", " + updateType + "); ").executeVoid();
 
             } catch (Exception e) {
