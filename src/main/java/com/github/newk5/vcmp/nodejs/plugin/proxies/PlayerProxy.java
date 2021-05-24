@@ -162,9 +162,9 @@ public class PlayerProxy {
                     return null;
                 }
 
-                String playerObj = playerJs.replaceFirst("'#id'", target.getId() + "");
+                int pid = target.getId();
                 ServerProxy.closeSyncBlock();
-                return playerObj;
+                return pid;
 
             } else if (method.equals("isStreamedForPlayer")) {
                 boolean v = false;
@@ -199,9 +199,9 @@ public class PlayerProxy {
                     return null;
                 }
 
-                String vehicleObjId = vehicleJs.replaceFirst("'#id'", v.getId() + "");
+                int vid = v.getId();
                 ServerProxy.closeSyncBlock();
-                return vehicleObjId;
+                return vid;
 
             } else if (method.equals("getStandingOnObject")) {
                 GameObject v = (GameObject) m.invoke(p, lst.toArray());
@@ -210,9 +210,9 @@ public class PlayerProxy {
                     return null;
                 }
 
-                String gameObj = objectJs.replaceFirst("'#id'", v.getId() + "");
+                int vid = v.getId();
                 ServerProxy.closeSyncBlock();
-                return gameObj;
+                return vid;
 
             } else if (method.equals("getPosition") || method.equals("getSpeed") || method.equals("getAimPosition") || method.equals("getAimDirection")) {
                 V8ValueObject obj = Context.v8.createV8ValueObject();

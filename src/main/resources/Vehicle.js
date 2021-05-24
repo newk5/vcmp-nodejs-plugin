@@ -23,7 +23,7 @@ var a = {
     setWorld : function ( arg0 ){  __VehicleProxy.run(this.id, 'setWorld', arguments); },
     getWorld : function ( ){ return  __VehicleProxy.run(this.id, 'getWorld', arguments); },
     getModel : function ( ){ return  __VehicleProxy.run(this.id, 'getModel', arguments); },
-    getOccupant : function ( arg0 ){   const p = __VehicleProxy.run(this.id, 'getOccupant', arguments); if (p==null || p == undefined) return p; return JSON.parse(p); },
+    getOccupant : function ( arg0 ){   const p = __VehicleProxy.run(this.id, 'getOccupant', arguments); if (p==null || p == undefined) return p; return server.getPlayer(p); },
     respawn : function ( ){  __VehicleProxy.run(this.id, 'respawn', arguments); },
     setImmunities : function ( arg0 ){  __VehicleProxy.run(this.id, 'setImmunities', arguments); },
     setHealth : function ( arg0 ){  __VehicleProxy.run(this.id, 'setHealth', arguments); },

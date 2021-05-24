@@ -13,6 +13,9 @@ import com.caoccao.javet.values.V8Value;
 import com.caoccao.javet.values.primitive.V8ValueBoolean;
 import com.caoccao.javet.values.primitive.V8ValueString;
 import com.caoccao.javet.values.reference.V8ValueObject;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import static com.github.newk5.vcmp.nodejs.plugin.Context.v8;
 import com.github.newk5.vcmp.nodejs.plugin.proxies.CheckpointProxy;
 import com.github.newk5.vcmp.nodejs.plugin.proxies.GameObjectProxy;
@@ -31,6 +34,9 @@ import com.maxorator.vcmp.java.plugin.integration.vehicle.Vehicle;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -38,6 +44,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,7 +61,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v1.0.1";
+    private String version = "v1.0.2";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -108,10 +115,35 @@ public class ServerEventHandler extends RootEventHandler {
         eventLoop.setName("eventLoopThread");
         eventLoop.start();
 
+        Thread updateChecker = new Thread(() -> {
+            String content = readURL("https://api.github.com/repos/newk5/vcmp-nodejs-plugin/releases/latest", StandardCharsets.UTF_8);
+            JsonObject object = Json.parse(content).asObject();
+            String newVersion = object.getString("name", "");
+
+            if (!newVersion.equals(version)) {
+                String msg = "\033[0;33m WARNING: Your plugin version is outdated, version " + newVersion + " is now available at: https://bit.ly/3yA1TJ5  \033[0m";
+                System.out.println(msg);
+            }
+
+        });
+        updateChecker.start();
+
         while (!eventLoopStarted.get()) {
 
         }
 
+    }
+
+    public static String readURL(String url, Charset encoding) {
+        String content = "";
+        try {
+            try (Scanner scanner = new Scanner(new URL(url).openStream(), String.valueOf(encoding))) {
+                content = scanner.useDelimiter("\\A").next();
+            }
+        } catch (Exception e) {
+
+        }
+        return content;
     }
 
     @Override
