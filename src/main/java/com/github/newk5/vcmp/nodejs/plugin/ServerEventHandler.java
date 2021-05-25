@@ -38,6 +38,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
@@ -61,7 +62,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v1.0.2";
+    private String version = "v1.0.3";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -122,15 +123,14 @@ public class ServerEventHandler extends RootEventHandler {
 
             if (!newVersion.equals(version)) {
                 String msg = "\033[0;33m WARNING: Your plugin version is outdated, version " + newVersion + " is now available at: https://bit.ly/3yA1TJ5  \033[0m";
+                String msg2 = "\033[0;33m WARNING: You can also run the Setup again to download the latest version  \033[0m";
+
                 System.out.println(msg);
+                System.out.println(msg2);
             }
 
         });
         updateChecker.start();
-
-        while (!eventLoopStarted.get()) {
-
-        }
 
     }
 
@@ -192,14 +192,15 @@ public class ServerEventHandler extends RootEventHandler {
             v8.getGlobalObject().setProperty("__dirname", dirname);
             v8.getGlobalObject().setProperty("__filename", filename);
 
-            IV8Executor e = v8.getExecutor(isWin ? new File("src" + File.separator + "main.js") : new File("main.js"));
+            File f = isWin ? new File("src" + File.separator + "main.js") : new File("main.js");
+            String content = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
 
-            e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath());
-            v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath());
+            IV8Executor e = v8.getExecutor(content);
+
+            // e.setResourceName(new File("." + File.separator + "src" + File.separator + "main.js").getAbsolutePath()); //avoid, causes weird issue with players not being able to join
+            // v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath()); //avoid, causes weird issue with players not being able to join
             //point to fake folder to fix relative require() paths to work when pointing to file in the same directory of main.js
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
-
-            System.out.println(e.getResourceName());
 
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
             V8Value vehicleProxy = entityConverter.toV8Value(v8, new VehicleProxy());
