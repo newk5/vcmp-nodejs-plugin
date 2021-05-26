@@ -62,7 +62,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v1.0.3";
+    private String version = "v1.0.4";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
@@ -122,8 +122,8 @@ public class ServerEventHandler extends RootEventHandler {
             String newVersion = object.getString("name", "");
 
             if (!newVersion.equals(version)) {
-                String msg = "\033[0;33m WARNING: Your plugin version is outdated, version " + newVersion + " is now available at: https://bit.ly/3yA1TJ5  \033[0m";
-                String msg2 = "\033[0;33m WARNING: You can also run the Setup again to download the latest version  \033[0m";
+                String msg = "\033[0;33m WARNING: Your plugin version is outdated, version " + newVersion + " is now available  \033[0m";
+                String msg2 = "\033[0;33m WARNING: Run the Setup again to automatically download the latest version or manually download it at: https://bit.ly/3yA1TJ5  \033[0m";
 
                 System.out.println(msg);
                 System.out.println(msg2);
@@ -192,7 +192,7 @@ public class ServerEventHandler extends RootEventHandler {
             v8.getGlobalObject().setProperty("__dirname", dirname);
             v8.getGlobalObject().setProperty("__filename", filename);
 
-            File f = isWin ? new File("src" + File.separator + "main.js") : new File("main.js");
+            File f = new File("src" + File.separator + "main.js");
             String content = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
 
             IV8Executor e = v8.getExecutor(content);
