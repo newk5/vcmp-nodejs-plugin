@@ -44,7 +44,7 @@ public class ServerProxy {
 
     private static CompactHashMap<String, Method> cachedMethods = new CompactHashMap<>();
     private static Method[] methods = Server.class.getMethods();
-    public static AtomicBoolean sync = new AtomicBoolean(false);
+
     public static SyncBlock synced;
 
     private V8ValueObject tempObj;
@@ -53,7 +53,7 @@ public class ServerProxy {
         String playerObj = "(" + playerJs.replaceFirst("'#id'", "arg0") + ").attachData()";
         String playerObjId = "(" + playerJs.replaceFirst("'#id'", "id") + ").attachData()";
         String playerObjGetAll = "(" + playerJs.replaceFirst("'#id'", "ids[i]") + ").attachData()";
-        String vehicleObjGetAll = "(" +vehicleJs.replaceFirst("'#id'", "ids[i]") + ").attachData()";
+        String vehicleObjGetAll = "(" + vehicleJs.replaceFirst("'#id'", "ids[i]") + ").attachData()";
 
         String gameObj = "(" + objectJs.replaceFirst("'#id'", "arg0") + ").attachData()";
         String pobj = "(" + pickupJs.replaceFirst("'#id'", "arg0") + ").attachData()";
@@ -194,30 +194,32 @@ public class ServerProxy {
         closeSyncBlock();
         return id;
     }
+    
+    public void gc(){
+        v8.lowMemoryNotification();
+    }
 
-    public static void syncThread() {
-        if (!sync.get()) { //dont start another sync block if there is already an active one
-
-            boolean workerThread = Thread.currentThread().getName().equals("eventLoopThread");
-            sync.set(workerThread);
+    public  static void syncThread() {
+        boolean workerThread = Thread.currentThread().getName().equals("eventLoopThread");
+        if (workerThread && synced == null) { //dont start another sync block if there is already an active one
 
             try {
-                synced = sync.get() ? server.sync() : null;
+              
+                synced = server.sync();
+                synced.start();
             } catch (IOException ex) {
                 Logger.getLogger(ServerProxy.class.getName()).log(Level.SEVERE, null, ex);
             }
-            if (synced != null) {
-                synced.start();
-            }
+
         }
     }
 
-    public static void closeSyncBlock() {
+    public  static void closeSyncBlock() {
         boolean workerThread = Thread.currentThread().getName().equals("eventLoopThread");
-        if (synced != null && workerThread && sync.get()) {
+        if (synced != null && workerThread) {
             try {
-                sync.set(false);
                 synced.close();
+                synced = null;
             } catch (Exception ex) {
                 Logger.getLogger(ServerProxy.class.getName()).log(Level.SEVERE, null, ex);
             }

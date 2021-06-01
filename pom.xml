@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.newk5.vcmp</groupId>
     <artifactId>nodejs-vcmp-plugin</artifactId>
-    <version>1.0.4</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,11 +15,6 @@
             <groupId>com.caoccao.javet</groupId>
             <artifactId>javet</artifactId>
             <version>0.8.7</version>
-        </dependency>
-        <dependency>
-            <groupId>com.maxorator.vcmp</groupId>
-            <artifactId>integration</artifactId>
-            <version>0.1.7</version>
         </dependency>
         <dependency>
             <groupId>org.tinylog</groupId>
@@ -36,7 +31,11 @@
             <artifactId>minimal-json</artifactId>
             <version>0.9.5</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.maxorator.vcmp.java.plugin</groupId>
+            <artifactId>integration</artifactId>
+            <version>0.1.7</version>
+        </dependency>
     </dependencies>
     
     <build>

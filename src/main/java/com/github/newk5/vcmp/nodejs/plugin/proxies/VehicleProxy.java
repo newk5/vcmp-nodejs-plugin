@@ -183,7 +183,7 @@ public class VehicleProxy {
         if (v != null) {
             VehicleDamage vd = v.getDamage();
             ServerProxy.closeSyncBlock();
-            return vd.getDoorStatus(tyre).ordinal();
+            return vd.getDoorStatus(tyre);
         }
         ServerProxy.closeSyncBlock();
         return -1;

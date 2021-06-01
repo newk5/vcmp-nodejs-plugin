@@ -2,7 +2,6 @@ package com.github.newk5.vcmp.nodejs.plugin;
 
 import com.caoccao.javet.exceptions.JavetException;
 import com.caoccao.javet.interop.NodeRuntime;
-import com.caoccao.javet.values.primitive.V8ValueUndefined;
 
 import com.maxorator.vcmp.java.plugin.integration.server.Server;
 import vlsi.utils.CompactHashMap;
@@ -37,7 +36,10 @@ public class Context {
     }
 
     public static boolean playerUpdateFunctionsExist() {
-        return false;
+        return functionExists("onPlayerWeaponChange")
+                || functionExists("onPlayerHealthChange")
+                || functionExists("onPlayerArmourChange")
+                || functionExists("onPlayerMove");
     }
 
 }

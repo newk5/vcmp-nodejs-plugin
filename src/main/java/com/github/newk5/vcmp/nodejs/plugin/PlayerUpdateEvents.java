@@ -20,7 +20,7 @@ public class PlayerUpdateEvents {
     public void update(Player player) {
         SavedPlayerData pd = lastPlayerData.get(player.getId());
 
-    /*    if (pd.getLastWep() != player.getWeapon()) {
+        if (pd.getLastWep() != player.getWeapon()) {
             eventHandler.onPlayerWeaponChange(player, pd.getLastWep(), player.getWeapon());
             pd.setLastWep(player.getWeapon());
         }
@@ -40,7 +40,7 @@ public class PlayerUpdateEvents {
             pd.setLastX(player.getPosition().x);
             pd.setLastY(player.getPosition().y);
             pd.setLastZ(player.getPosition().z);
-        }*/
+        }
 
     }
 

@@ -62,10 +62,11 @@ public class ServerEventHandler extends RootEventHandler {
 
     private String tempPlayerVar = "__tempPlayer";
     private boolean hotReload = false;
-    private String version = "v1.0.4";
+    private String version = "v1.1.0";
 
     private AtomicBoolean changed = new AtomicBoolean(false);
     private AtomicBoolean eventLoopStarted = new AtomicBoolean(false);
+    private AtomicBoolean init = new AtomicBoolean(false);
     private PlayerUpdateEvents playerUpdateEvents;
     private boolean isWin = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
     private FileResourceUtils resources = new FileResourceUtils();
@@ -97,24 +98,6 @@ public class ServerEventHandler extends RootEventHandler {
                 }
             }).start();
         }
-        v8 = V8Host.getNodeInstance().createV8Runtime();
-
-        Thread eventLoop = new Thread(() -> {
-
-            eventLoopStarted.set(true);
-            while (true) {
-
-                try {
-                    v8.await();
-                    Thread.sleep(1);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-        });
-        eventLoop.setName("eventLoopThread");
-        eventLoop.start();
 
         Thread updateChecker = new Thread(() -> {
             String content = readURL("https://api.github.com/repos/newk5/vcmp-nodejs-plugin/releases/latest", StandardCharsets.UTF_8);
@@ -132,6 +115,54 @@ public class ServerEventHandler extends RootEventHandler {
         });
         updateChecker.start();
 
+        V8Host host = V8Host.getNodeInstance();
+
+        v8 = host.createV8Runtime();
+        Thread eventLoop = new Thread(() -> {
+            try {
+
+                eventLoopStarted.set(true);
+                while (true) {
+                    v8.await();
+                    Thread.sleep(1);
+
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        });
+        eventLoop.setName("eventLoopThread");
+        eventLoop.start();
+
+        Context.load(server);
+
+        try {
+
+            this.playerJs = resources.readResource("Player.js");
+            this.checkpointJs = resources.readResource("Checkpoint.js");
+            this.objectJs = resources.readResource("Object.js");
+            this.pickupJs = resources.readResource("Pickup.js");
+            this.vehicleJs = resources.readResource("Vehicle.js");
+            v8.getExecutor(resources.readResource("VCMPGlobals.js")).executeVoid();
+            v8.getExecutor(resources.readResource("Server.js")).executeVoid();
+            init();
+
+            if (Context.playerUpdateFunctionsExist()) {
+                playerUpdateEvents = new PlayerUpdateEvents(this);
+            }
+
+            System.out.println("");
+            v8.getExecutor(" console.log('\\x1b[32m', 'Loaded plugin: Node.js " + version + " by NewK ');").executeVoid();
+            v8.getExecutor(" console.log('\\x1b[32m','Node.js '+process.version);").executeVoid();
+            v8.getExecutor(" console.log('\\x1b[0m', '');").executeVoid();
+            System.out.println("");
+            org.pmw.tinylog.Logger.info("Node.js context initilized");
+
+        } catch (Exception e) {
+            exception(e);
+            e.printStackTrace();
+        }
     }
 
     public static String readURL(String url, Charset encoding) {
@@ -149,28 +180,8 @@ public class ServerEventHandler extends RootEventHandler {
     @Override
     public boolean onServerInitialise() {
 
-        Context.load(server);
-        if (Context.playerUpdateFunctionsExist()) {
-            playerUpdateEvents = new PlayerUpdateEvents(this);
-        }
-
         try {
 
-            this.playerJs = resources.readResource("Player.js");
-            this.checkpointJs = resources.readResource("Checkpoint.js");
-            this.objectJs = resources.readResource("Object.js");
-            this.pickupJs = resources.readResource("Pickup.js");
-            this.vehicleJs = resources.readResource("Vehicle.js");
-            v8.getExecutor(resources.readResource("VCMPGlobals.js")).executeVoid();
-            v8.getExecutor(resources.readResource("Server.js")).executeVoid();
-            init();
-
-            System.out.println("");
-            v8.getExecutor(" console.log('\\x1b[32m', 'Loaded plugin: Node.js " + version + " by NewK ');").executeVoid();
-            v8.getExecutor(" console.log('\\x1b[32m','Node.js '+process.version);").executeVoid();
-            v8.getExecutor(" console.log('\\x1b[0m', '');").executeVoid();
-            System.out.println("");
-            org.pmw.tinylog.Logger.info("Node.js context initilized");
             if (Context.functionExists("onServerInitialise")) {
 
                 v8.getGlobalObject().invokeVoid("onServerInitialise");
@@ -201,7 +212,6 @@ public class ServerEventHandler extends RootEventHandler {
             // v8.getNodeModule(NodeModuleProcess.class).setWorkingDirectory(new File("src").toPath()); //avoid, causes weird issue with players not being able to join
             //point to fake folder to fix relative require() paths to work when pointing to file in the same directory of main.js
             v8.getNodeModule(NodeModuleModule.class).setRequireRootDirectory(new File("src" + File.separator + "script" + System.currentTimeMillis()).toPath());
-
             V8Value playerProxy = entityConverter.toV8Value(v8, new PlayerProxy());
             V8Value vehicleProxy = entityConverter.toV8Value(v8, new VehicleProxy());
             V8Value pickupProxy = entityConverter.toV8Value(v8, new PickupProxy());
@@ -241,7 +251,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     @Override
     public void onServerFrame() {
-        if (hotReload) {
+        /* if (hotReload) {
             if (changed.get()) {
                 try {
                     v8.resetContext();
@@ -251,7 +261,7 @@ public class ServerEventHandler extends RootEventHandler {
                 }
                 changed.set(false);
             }
-        }
+        }*/
     }
 
     public static void exception(Exception e) {
@@ -272,7 +282,9 @@ public class ServerEventHandler extends RootEventHandler {
 
     @Override
     public void onPlayerConnect(Player player) {
-
+        if (Context.playerUpdateFunctionsExist()) {
+            playerUpdateEvents.connect(player);
+        }
         if (Context.functionExists("onPlayerConnect")) {
             try {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
@@ -290,7 +302,6 @@ public class ServerEventHandler extends RootEventHandler {
     @Override
     public void onServerLoadScripts() {
         try {
-
             if (Context.functionExists("onServerLoadScripts")) {
 
                 try {
@@ -300,7 +311,7 @@ public class ServerEventHandler extends RootEventHandler {
                     Logger.getLogger(ServerEventHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                // 
+               
             }
 
         } catch (Exception ex) {
@@ -342,7 +353,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = playerJs.replaceFirst("'#id'", p.getId() + "");
 
                 v8.getExecutor("onPlayerWeaponChange(" + playerObj + ", " + oldWep + ", " + newWep + "); ").executeVoid();
-
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -357,6 +368,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerMove(" + playerObj + ", " + lastX + ", " + lastY + ", " + lastZ + ", " + newX + ", " + newY + ", " + newZ + " ); ").executeVoid();
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -370,7 +382,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerHealthChange(" + playerObj + ", " + lastHP + ", " + newHP + "); ").executeVoid();
-
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -383,7 +395,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerArmourChange(" + playerObj + ", " + lastArmour + ", " + newArmour + "); ").executeVoid();
-
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -711,7 +723,7 @@ public class ServerEventHandler extends RootEventHandler {
             try {
                 String vehicleObj = "(" + vehicleJs.replaceFirst("'#id'", vehicle.getId() + "") + ").attachData()";
                 v8.getExecutor("onVehicleUpdate(" + vehicleObj + ", " + updateType + "); ").executeVoid();
-
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }
@@ -991,6 +1003,7 @@ public class ServerEventHandler extends RootEventHandler {
 
     @Override
     public void onPlayerUpdate(Player player, int updateType) {
+
         if (Context.playerUpdateFunctionsExist()) {
             playerUpdateEvents.update(player);
         }
@@ -1000,7 +1013,7 @@ public class ServerEventHandler extends RootEventHandler {
                 String playerObj = "(" + playerJs.replaceFirst("'#id'", player.getId() + "") + ").attachData()";
 
                 v8.getExecutor("onPlayerUpdate(" + playerObj + ", " + updateType + "); ").executeVoid();
-
+                v8.lowMemoryNotification();
             } catch (Exception e) {
                 this.exception(e);
             }

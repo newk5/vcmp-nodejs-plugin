@@ -65,7 +65,7 @@ public class PlayerProxy {
         return p.getImmunities().has(v);
 
     }
-
+  
     public void addImmunity(int id, int v) {
         ServerProxy.syncThread();
         Player p = ServerEventHandler.server.getPlayer(id);

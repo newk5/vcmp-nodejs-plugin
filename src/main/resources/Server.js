@@ -91,7 +91,8 @@ const server ={
     getPlayerLimit : function( ) { __ServerProxy.run('getPlayerLimit', arguments); },
     sendGameMessage : function( arg0, arg1, arg2 ) { __ServerProxy.run('sendGameMessage', arguments); },
     getGameModeText : function( ) { __ServerProxy.run('getGameModeText', arguments); },
-    shutdownServer : function( ) { __ServerProxy.run('shutdownServer', arguments); }  
+    shutdownServer : function( ) { __ServerProxy.run('shutdownServer', arguments); },
+    gc: function () { __ServerProxy.gc(); }
     
 };
 
